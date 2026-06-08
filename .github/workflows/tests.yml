@@ -2,53 +2,111 @@ name: Tests
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
   pull_request:
-    branches:
-      - master
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The audio test runs headless, so point SDL at the dummy audio device.
+  SDL_AUDIODRIVER: dummy
 
 jobs:
   test:
-    name: Test
-    runs-on: ubuntu-latest
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential git cmake ninja-build \
-            libfreetype-dev libharfbuzz-dev libpng-dev libjpeg-dev pkg-config
+      - name: Install Nim
+        uses: jiro4989/setup-nim-action@v2
+        with:
+          nim-version: '2.2.x'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Cache SDL3
-        id: cache-sdl3
+      # --- macOS: the whole SDL3 family is in Homebrew ---
+      - name: Install SDL3 (macOS)
+        if: runner.os == 'macOS'
+        run: brew install sdl3 sdl3_image sdl3_ttf sdl3_mixer
+
+      # --- Linux: build the SDL3 family from source (apt has no SDL3 yet) ---
+      # The build is headless, so SDL_UNIX_CONSOLE_BUILD lets it configure
+      # without X11 or Wayland, which the tests never need.
+      - name: Cache SDL3 (Linux)
+        if: runner.os == 'Linux'
+        id: cache-sdl
         uses: actions/cache@v4
         with:
-          path: /usr/local
-          key: sdl3-3.4.10-image-3.4.4-ttf-3.2.2
+          path: ~/sdl3
+          key: linux-sdl-3.4.10-image-3.4.4-ttf-3.2.2-mixer-3.2.4-v1
 
-      - name: Build SDL3 from source
-        if: steps.cache-sdl3.outputs.cache-hit != 'true'
+      - name: Install SDL3 build and runtime deps (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git cmake ninja-build pkg-config \
+            libfreetype-dev libharfbuzz-dev libpng-dev libjpeg-dev libogg-dev libvorbis-dev
+
+      - name: Build SDL3 from source (Linux)
+        if: runner.os == 'Linux' && steps.cache-sdl.outputs.cache-hit != 'true'
         run: |
           set -e
+          PREFIX="$HOME/sdl3"
           build() {
-            git clone --depth 1 --branch "$2" "$1" sdlsrc
-            cmake -S sdlsrc -B sdlsrc/build -G Ninja -DCMAKE_BUILD_TYPE=Release
-            cmake --build sdlsrc/build
-            sudo cmake --install sdlsrc/build
-            rm -rf sdlsrc
+            local repo="$1"; local tag="$2"; shift 2
+            git clone --depth 1 --branch "$tag" "https://github.com/libsdl-org/$repo" src
+            cmake -S src -B src/build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX="$PREFIX" -DCMAKE_PREFIX_PATH="$PREFIX" "$@"
+            cmake --build src/build
+            cmake --install src/build
+            rm -rf src
           }
-          build https://github.com/libsdl-org/SDL.git        release-3.4.10
-          build https://github.com/libsdl-org/SDL_image.git  release-3.4.4
-          build https://github.com/libsdl-org/SDL_ttf.git    release-3.2.2
+          build SDL        release-3.4.10 -DSDL_UNIX_CONSOLE_BUILD=ON
+          build SDL_image  release-3.4.4
+          build SDL_ttf    release-3.2.2
+          build SDL_mixer  release-3.2.4
 
-      - name: Refresh linker cache
-        run: sudo ldconfig
+      - name: Configure SDL3 paths (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          echo "NIM2D_SDL_PREFIX=$HOME/sdl3" >> "$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=$HOME/sdl3/lib:$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
 
-      - uses: jiro4989/setup-nim-action@v2
-        with:
-          nim-version: 'stable'
+      # --- Windows: prebuilt MinGW development packages ---
+      - name: Install SDL3 (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $prefix = "C:\sdl3"
+          New-Item -ItemType Directory -Force -Path "$prefix\bin", "$prefix\include", "$prefix\lib" | Out-Null
+          $pkgs = @(
+            @{ repo = "SDL";       tag = "release-3.4.10"; name = "SDL3-3.4.10";      file = "SDL3-devel-3.4.10-mingw.zip" },
+            @{ repo = "SDL_image"; tag = "release-3.4.4";  name = "SDL3_image-3.4.4"; file = "SDL3_image-devel-3.4.4-mingw.zip" },
+            @{ repo = "SDL_ttf";   tag = "release-3.2.2";  name = "SDL3_ttf-3.2.2";   file = "SDL3_ttf-devel-3.2.2-mingw.zip" },
+            @{ repo = "SDL_mixer"; tag = "release-3.2.4";  name = "SDL3_mixer-3.2.4"; file = "SDL3_mixer-devel-3.2.4-mingw.zip" }
+          )
+          foreach ($p in $pkgs) {
+            $url = "https://github.com/libsdl-org/$($p.repo)/releases/download/$($p.tag)/$($p.file)"
+            $zip = Join-Path $env:RUNNER_TEMP $p.file
+            Invoke-WebRequest -Uri $url -OutFile $zip
+            Expand-Archive -Path $zip -DestinationPath $env:RUNNER_TEMP -Force
+            $arch = Join-Path $env:RUNNER_TEMP "$($p.name)\x86_64-w64-mingw32"
+            Copy-Item -Recurse -Force "$arch\bin\*"     "$prefix\bin\"
+            Copy-Item -Recurse -Force "$arch\include\*" "$prefix\include\"
+            Copy-Item -Recurse -Force "$arch\lib\*"     "$prefix\lib\"
+          }
+          Add-Content -Path $env:GITHUB_ENV  -Value "NIM2D_SDL_PREFIX=C:/sdl3"
+          Add-Content -Path $env:GITHUB_PATH -Value "C:\sdl3\bin"
 
       - name: Run tests
         run: nimble test -Y

@@ -206,8 +206,12 @@ proc startPass(gpu: GpuContext, target: ptr SDL_GPUTexture, w, h: int32,
     target: target, w: w, h: h, doClear: doClear, clearColor: clearColor,
     projection: ortho(w, h), cmds: @[])
 
-proc beginFrame*(gpu: GpuContext, winW, winH: int32, background: Color): bool =
-  ## Acquire the command buffer + swapchain texture and start the screen pass.
+proc beginFrame*(gpu: GpuContext, background: Color, width, height: var int32): bool =
+  ## Acquire the command buffer and swapchain texture and start the screen pass.
+  ## The swapchain's real size is reported back through `width` and `height`, so
+  ## the projection and scissor follow the actual framebuffer. A resized or
+  ## fullscreen window then draws at its true pixel size instead of being
+  ## stretched into the corner.
   gpu.vertices.setLen(0)
   gpu.indices.setLen(0)
   gpu.passes.setLen(0)
@@ -226,7 +230,9 @@ proc beginFrame*(gpu: GpuContext, winW, winH: int32, background: Color): bool =
     discard SDL_SubmitGPUCommandBuffer(gpu.cmd)
     gpu.cmd = nil
     return false
-  startPass(gpu, gpu.swTex, winW, winH, true, background)
+  width = int32(w)
+  height = int32(h)
+  startPass(gpu, gpu.swTex, width, height, true, background)
   return true
 
 proc addGeometry*(gpu: GpuContext, kind: PipelineKind, blend: BlendMode,

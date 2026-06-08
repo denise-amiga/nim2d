@@ -18,5 +18,6 @@ The `examples` folder has runnable demos, each a single file. Run any of them wi
 - `imagedata.nim` builds a small texture on the CPU pixel by pixel, draws it scaled up, and saves it to a PNG when you press S.
 - `filesystem.nim` keeps a high-score table in the save directory, appending a new score on each press and reading it back.
 - `audio.nim` plays a looping music track and a sound effect, with keys for volume, stereo panning and pitch.
+- `system.nim` shows the platform and power info and drives the window and cursor from the keyboard: fullscreen, resize, minimize, relative mouse mode, grab, clipboard and a message box.
 
 These are a good place to see the API used in context. snake and pong show input and game state, particles shows blend modes, clock shows building shapes from lines and trigonometry, and all shows images, canvases and text together.

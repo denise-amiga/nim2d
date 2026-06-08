@@ -19,3 +19,37 @@ proc isMouseDown*(button: int = 1): bool =
   let state = SDL_GetMouseState(addr x, addr y)
   let mask = SDL_MouseButtonFlags(1'u32 shl (button - 1))
   (state and mask) != 0
+
+# --- cursor, capture and warping -------------------------------------------
+
+proc setMouseVisible*(visible: bool) =
+  ## Show or hide the mouse cursor.
+  if visible: discard SDL_ShowCursor()
+  else: discard SDL_HideCursor()
+
+proc isMouseVisible*(): bool =
+  ## Whether the cursor is shown.
+  SDL_CursorVisible()
+
+proc setRelativeMode*(nim2d: Nim2d, enabled: bool) =
+  ## Capture the mouse and report relative motion, with the cursor hidden. The
+  ## `mousemove` callback then reports movement deltas (dx, dy) without the
+  ## pointer being pinned at a screen edge, which suits mouse-look and games
+  ## that steer by mouse movement.
+  discard SDL_SetWindowRelativeMouseMode(nim2d.gpu.window, enabled)
+
+proc isRelativeMode*(nim2d: Nim2d): bool =
+  ## Whether relative mouse mode is on.
+  SDL_GetWindowRelativeMouseMode(nim2d.gpu.window)
+
+proc setMouseGrabbed*(nim2d: Nim2d, grabbed: bool) =
+  ## Confine the cursor to the window.
+  discard SDL_SetWindowMouseGrab(nim2d.gpu.window, grabbed)
+
+proc isMouseGrabbed*(nim2d: Nim2d): bool =
+  ## Whether the cursor is confined to the window.
+  SDL_GetWindowMouseGrab(nim2d.gpu.window)
+
+proc setMousePosition*(nim2d: Nim2d, x, y: float) =
+  ## Warp the cursor to a position inside the window.
+  SDL_WarpMouseInWindow(nim2d.gpu.window, x.cfloat, y.cfloat)

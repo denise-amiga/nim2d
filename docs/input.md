@@ -56,6 +56,8 @@ n2d.update = proc(nim2d: Nim2d, dt: float) =
     paint(m.x, m.y)
 ```
 
+The cursor and capture have their own controls. `setMouseVisible` shows or hides the pointer and `isMouseVisible` reports it. `setRelativeMode` captures the mouse and hides the cursor so `mousemove` reports movement deltas without the pointer getting stuck at a screen edge, which is what you want for steering by mouse motion or for mouse-look, and `isRelativeMode` reads it back. `setMouseGrabbed` confines the cursor to the window, and `setMousePosition` warps it to a spot.
+
 ## Gamepads
 
 Controllers are opened for you when they connect. The `gamepadpressed` and `gamepadreleased` callbacks give you the controller id and which button, and `gamepadaxis` gives the id, the axis, and a value from -1 to 1 (triggers go 0 to 1). The buttons and axes use the SDL3 names, like `SDL_GAMEPAD_BUTTON_SOUTH` and `SDL_GAMEPAD_AXIS_LEFTX`. You can also poll with `isGamepadDown` and `gamepadAxis`, and `connectedGamepads` lists what's plugged in.
@@ -73,6 +75,16 @@ There are callbacks for window changes too, like `window_resized`, `window_focus
 ```nim
 n2d.window_focus_lost = proc(nim2d: Nim2d) =
   paused = true
+```
+
+## Window control
+
+Beyond `getWidth`, `getHeight` and `getSize`, there are controls for the window itself. `setTitle` sets the title, `setSize` resizes it and `setResizable` decides whether the user can. `setFullscreen` switches to fullscreen and back, and `isFullscreen` reads the state. `minimize`, `maximize` and `restore` do what they say. `getDesktopDimensions` gives the primary display's resolution, `setIcon` takes an ImageData for the window icon, and `showMessageBox` pops up a simple message and waits for it to be dismissed.
+
+```nim
+n2d.keydown = proc(nim2d: Nim2d, sc: SDL_Scancode) =
+  if sc == SDL_SCANCODE_F:
+    nim2d.setFullscreen(not nim2d.isFullscreen)
 ```
 
 ## Timing

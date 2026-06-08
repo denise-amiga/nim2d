@@ -179,6 +179,13 @@ suite "audio (runtime, only when a device is available)":
       s.destroy()
       check not s.isPlaying
 
+suite "system (platform queries)":
+  test "os, cpu and power return sane values":
+    check getOS().len > 0
+    check getProcessorCount() >= 1
+    let p = getPowerInfo()
+    check p.state.len > 0
+
 # Compile-only: exercises the full public surface without running the GPU.
 when false:
   proc demo() =
@@ -221,5 +228,23 @@ when false:
     n2d.setListenerPosition(0, 0)
     discard n2d.getListenerPosition()
     n2d.stopAll()
+    # window and mouse niceties
+    n2d.setRelativeMode(true)
+    discard n2d.isRelativeMode()
+    n2d.setMouseGrabbed(true)
+    discard n2d.isMouseGrabbed()
+    setMouseVisible(false)
+    discard isMouseVisible()
+    n2d.setMousePosition(10, 10)
+    n2d.setFullscreen(true)
+    discard n2d.isFullscreen()
+    n2d.setResizable(true)
+    n2d.setSize(640, 480)
+    n2d.minimize(); n2d.maximize(); n2d.restore()
+    discard getDesktopDimensions()
+    n2d.setIcon(newImageData(16, 16))
+    n2d.showMessageBox("hi", "there")
+    # system
+    discard getOS(); discard getProcessorCount(); discard getPowerInfo()
     n2d.play()
   demo()

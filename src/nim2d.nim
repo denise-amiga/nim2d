@@ -23,10 +23,11 @@ import nim2d/data
 import nim2d/imagedata
 import nim2d/filesystem
 import nim2d/audio
+import nim2d/system
 
 export types, graphics, image, canvas, font, timer, window
 export keyboard, mouse, gamepad, spritebatch, mesh, particlesystem, shader
-export math, data, imagedata, filesystem, audio
+export math, data, imagedata, filesystem, audio, system
 export sdl  # SDL_Scancode, SDL_SCANCODE_*, etc. for callback handlers
 
 # --- callback setters ------------------------------------------------------
@@ -142,7 +143,9 @@ proc play*(nim2d: Nim2d) =
 
     nim2d.update(nim2d, nim2d.dt)
 
-    if nim2d.gpu.beginFrame(nim2d.width, nim2d.height, nim2d.background):
+    # beginFrame writes the live swapchain size back into width/height, so the
+    # projection and getWidth/getHeight track window resizes and fullscreen.
+    if nim2d.gpu.beginFrame(nim2d.background, nim2d.width, nim2d.height):
       nim2d.draw(nim2d)
       nim2d.gpu.endFrame()
 
