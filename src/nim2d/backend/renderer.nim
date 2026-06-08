@@ -10,6 +10,7 @@
 import std/math
 import sdl, shaders
 import ../types
+import ../transform
 
 # --- math ------------------------------------------------------------------
 
@@ -74,15 +75,8 @@ proc blendState(mode: BlendMode): SDL_GPUColorTargetBlendState =
       dst_alpha_blendfactor: SDL_GPU_BLENDFACTOR_ZERO,
       alpha_blend_op: SDL_GPU_BLENDOP_ADD)
 
-proc buildPipelines(gpu: GpuContext) =
-  let dev = gpu.device
-  let vs = makeShader(dev, VertexShaderMSL, "vertexMain",
-                      SDL_GPU_SHADERSTAGE_VERTEX, 0, 1)
-  let fsColor = makeShader(dev, FragmentColorMSL, "fragmentColor",
-                           SDL_GPU_SHADERSTAGE_FRAGMENT, 0, 0)
-  let fsTex = makeShader(dev, FragmentTextureMSL, "fragmentTexture",
-                         SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 0)
-
+proc makePipeline(gpu: GpuContext, vs, fs: ptr SDL_GPUShader,
+                  blend: BlendMode): ptr SDL_GPUGraphicsPipeline =
   var vbDesc = SDL_GPUVertexBufferDescription(
     slot: 0, pitch: Uint32(sizeof(Vertex)),
     input_rate: SDL_GPU_VERTEXINPUTRATE_VERTEX)
@@ -94,34 +88,55 @@ proc buildPipelines(gpu: GpuContext) =
     SDL_GPUVertexAttribute(location: 2, buffer_slot: 0,
       format: SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4, offset: Uint32(4 * sizeof(float32))),
   ]
-  let swFormat = SDL_GetGPUSwapchainTextureFormat(dev, gpu.window)
+  var colorTarget = SDL_GPUColorTargetDescription(
+    format: gpu.swFormat, blend_state: blendState(blend))
+  var ci = SDL_GPUGraphicsPipelineCreateInfo(
+    vertex_shader: vs,
+    fragment_shader: fs,
+    vertex_input_state: SDL_GPUVertexInputState(
+      vertex_buffer_descriptions: addr vbDesc, num_vertex_buffers: 1,
+      vertex_attributes: addr attrs[0], num_vertex_attributes: 3),
+    primitive_type: SDL_GPU_PRIMITIVETYPE_TRIANGLELIST,
+    rasterizer_state: SDL_GPURasterizerState(
+      fill_mode: SDL_GPU_FILLMODE_FILL, cull_mode: SDL_GPU_CULLMODE_NONE,
+      front_face: SDL_GPU_FRONTFACE_COUNTER_CLOCKWISE),
+    multisample_state: SDL_GPUMultisampleState(sample_count: SDL_GPU_SAMPLECOUNT_1),
+    target_info: SDL_GPUGraphicsPipelineTargetInfo(
+      color_target_descriptions: addr colorTarget, num_color_targets: 1))
+  result = SDL_CreateGPUGraphicsPipeline(gpu.device, addr ci)
+  if result == nil:
+    raise newException(CatchableError,
+      "SDL_CreateGPUGraphicsPipeline failed: " & $SDL_GetError())
 
-  for kind in PipelineKind:
-    for blend in BlendMode:
-      var colorTarget = SDL_GPUColorTargetDescription(
-        format: swFormat, blend_state: blendState(blend))
-      var ci = SDL_GPUGraphicsPipelineCreateInfo(
-        vertex_shader: vs,
-        fragment_shader: (if kind == pkColored: fsColor else: fsTex),
-        vertex_input_state: SDL_GPUVertexInputState(
-          vertex_buffer_descriptions: addr vbDesc, num_vertex_buffers: 1,
-          vertex_attributes: addr attrs[0], num_vertex_attributes: 3),
-        primitive_type: SDL_GPU_PRIMITIVETYPE_TRIANGLELIST,
-        rasterizer_state: SDL_GPURasterizerState(
-          fill_mode: SDL_GPU_FILLMODE_FILL, cull_mode: SDL_GPU_CULLMODE_NONE,
-          front_face: SDL_GPU_FRONTFACE_COUNTER_CLOCKWISE),
-        multisample_state: SDL_GPUMultisampleState(sample_count: SDL_GPU_SAMPLECOUNT_1),
-        target_info: SDL_GPUGraphicsPipelineTargetInfo(
-          color_target_descriptions: addr colorTarget, num_color_targets: 1))
-      let p = SDL_CreateGPUGraphicsPipeline(dev, addr ci)
-      if p == nil:
-        raise newException(CatchableError,
-          "SDL_CreateGPUGraphicsPipeline failed: " & $SDL_GetError())
-      gpu.pipelines[kind][blend] = p
-
+proc buildPipelines(gpu: GpuContext) =
+  let dev = gpu.device
+  let vs = makeShader(dev, VertexShaderMSL, "vertexMain",
+                      SDL_GPU_SHADERSTAGE_VERTEX, 0, 1)
+  let fsColor = makeShader(dev, FragmentColorMSL, "fragmentColor",
+                           SDL_GPU_SHADERSTAGE_FRAGMENT, 0, 0)
+  let fsTex = makeShader(dev, FragmentTextureMSL, "fragmentTexture",
+                         SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 0)
+  for blend in BlendMode:
+    gpu.pipelines[pkColored][blend] = makePipeline(gpu, vs, fsColor, blend)
+    gpu.pipelines[pkTextured][blend] = makePipeline(gpu, vs, fsTex, blend)
   SDL_ReleaseGPUShader(dev, vs)
   SDL_ReleaseGPUShader(dev, fsColor)
   SDL_ReleaseGPUShader(dev, fsTex)
+
+proc createShaderPipelines*(gpu: GpuContext, fragmentSrc: string,
+                            hasUniform: bool): array[BlendMode, ptr SDL_GPUGraphicsPipeline] =
+  ## Build one pipeline per blend mode from a user fragment shader (entrypoint
+  ## "frag"), reusing the built-in vertex shader. The fragment gets a sampler at
+  ## slot 0 and, when hasUniform is set, a fragment uniform buffer at slot 0.
+  let dev = gpu.device
+  let vs = makeShader(dev, VertexShaderMSL, "vertexMain",
+                      SDL_GPU_SHADERSTAGE_VERTEX, 0, 1)
+  let fs = makeShader(dev, fragmentSrc, "frag", SDL_GPU_SHADERSTAGE_FRAGMENT,
+                      1, (if hasUniform: 1'u32 else: 0'u32))
+  for blend in BlendMode:
+    result[blend] = makePipeline(gpu, vs, fs, blend)
+  SDL_ReleaseGPUShader(dev, vs)
+  SDL_ReleaseGPUShader(dev, fs)
 
 proc createSampler(gpu: GpuContext) =
   var ci = SDL_GPUSamplerCreateInfo(
@@ -135,6 +150,8 @@ proc createSampler(gpu: GpuContext) =
   if gpu.sampler == nil:
     raise newException(CatchableError, "SDL_CreateGPUSampler failed: " & $SDL_GetError())
 
+proc createTextureFromPixels*(gpu: GpuContext, pixels: pointer, w, h, pitch: int): ptr SDL_GPUTexture
+
 proc newGpuContext*(window: ptr SDL_Window): GpuContext =
   result = GpuContext(window: window)
   # Requests MSL shaders (the Metal backend).
@@ -147,6 +164,8 @@ proc newGpuContext*(window: ptr SDL_Window): GpuContext =
   result.swFormat = SDL_GetGPUSwapchainTextureFormat(result.device, window)
   result.createSampler()
   result.buildPipelines()
+  var white = [255'u8, 255'u8, 255'u8, 255'u8]
+  result.whiteTex = result.createTextureFromPixels(addr white[0], 1, 1, 4)
 
 # --- GPU buffer management -------------------------------------------------
 
@@ -192,6 +211,10 @@ proc beginFrame*(gpu: GpuContext, winW, winH: int32, background: Color): bool =
   gpu.vertices.setLen(0)
   gpu.indices.setLen(0)
   gpu.passes.setLen(0)
+  gpu.transform = identity()
+  gpu.transformStack.setLen(0)
+  gpu.curScissor = Scissor(on: false)
+  gpu.curShader = nil
   gpu.cmd = SDL_AcquireGPUCommandBuffer(gpu.device)
   if gpu.cmd == nil: return false
   var w, h: Uint32
@@ -213,17 +236,24 @@ proc addGeometry*(gpu: GpuContext, kind: PipelineKind, blend: BlendMode,
   ## pipeline/blend/texture match (so consecutive same-state draws batch).
   if verts.len == 0 or idx.len == 0: return
   let base = uint32(gpu.vertices.len)
-  for v in verts: gpu.vertices.add v
+  for v in verts:
+    var vv = v
+    let (nx, ny) = gpu.transform.apply(v.x.float, v.y.float)
+    vv.x = nx.float32
+    vv.y = ny.float32
+    gpu.vertices.add vv
   let first = uint32(gpu.indices.len)
   for i in idx: gpu.indices.add base + i
 
   template pass: untyped = gpu.passes[^1]
   let n = pass.cmds.len
   if n > 0 and pass.cmds[n-1].kind == kind and pass.cmds[n-1].blend == blend and
-     pass.cmds[n-1].texture == texture:
+     pass.cmds[n-1].texture == texture and pass.cmds[n-1].shader == gpu.curShader and
+     pass.cmds[n-1].scissor == gpu.curScissor:
     pass.cmds[n-1].indexCount += uint32(idx.len)
   else:
     pass.cmds.add DrawCmd(kind: kind, blend: blend, texture: texture,
+                          shader: gpu.curShader, scissor: gpu.curScissor,
                           firstIndex: first, indexCount: uint32(idx.len))
 
 proc setTarget*(gpu: GpuContext, target: ptr SDL_GPUTexture, w, h: int32) =
@@ -278,10 +308,27 @@ proc endFrame*(gpu: GpuContext) =
       SDL_BindGPUVertexBuffers(rp, 0, addr vbind, 1)
       SDL_BindGPUIndexBuffer(rp, addr ibind, SDL_GPU_INDEXELEMENTSIZE_32BIT)
     for c in p.cmds:
-      SDL_BindGPUGraphicsPipeline(rp, gpu.pipelines[c.kind][c.blend])
-      if c.kind == pkTextured and c.texture != nil:
-        var tsb = SDL_GPUTextureSamplerBinding(texture: c.texture, sampler: gpu.sampler)
+      if c.shader != nil:
+        SDL_BindGPUGraphicsPipeline(rp, c.shader.pipelines[c.blend])
+        if c.shader.hasUniform and c.shader.uniform.len > 0:
+          SDL_PushGPUFragmentUniformData(gpu.cmd, 0, addr c.shader.uniform[0],
+                                         Uint32(c.shader.uniform.len))
+        # Shader pipelines always take a sampler; use a white texture if none.
+        let tex = if c.texture != nil: c.texture else: gpu.whiteTex
+        var tsb = SDL_GPUTextureSamplerBinding(texture: tex, sampler: gpu.sampler)
         SDL_BindGPUFragmentSamplers(rp, 0, addr tsb, 1)
+      else:
+        SDL_BindGPUGraphicsPipeline(rp, gpu.pipelines[c.kind][c.blend])
+        if c.kind == pkTextured and c.texture != nil:
+          var tsb = SDL_GPUTextureSamplerBinding(texture: c.texture, sampler: gpu.sampler)
+          SDL_BindGPUFragmentSamplers(rp, 0, addr tsb, 1)
+      if c.scissor.on:
+        var sr = SDL_Rect(x: c.scissor.x.cint, y: c.scissor.y.cint,
+                          w: c.scissor.w.cint, h: c.scissor.h.cint)
+        SDL_SetGPUScissor(rp, addr sr)
+      else:
+        var sr = SDL_Rect(x: 0, y: 0, w: p.w.cint, h: p.h.cint)
+        SDL_SetGPUScissor(rp, addr sr)
       SDL_DrawGPUIndexedPrimitives(rp, c.indexCount, 1, c.firstIndex, 0, 0)
     SDL_EndGPURenderPass(rp)
 

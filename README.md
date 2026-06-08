@@ -4,9 +4,9 @@
 
 Nim2D is a small 2D game engine for Nim, loosely modeled on love2d. It started as a way for me to get my hands dirty with Nim and SDL, and it has since moved over to Nim 2.x and SDL3, drawing through SDL's GPU API. It's pre-alpha, so expect rough edges.
 
-The plan is to slowly grow toward love2d feature parity, so anything you can do there you can eventually do here, written in plain Nim. Right now there's enough to draw shapes, images and text, render to a canvas, and handle keyboard and mouse input. `examples/all.nim` touches most of what exists, and there are a few small demos next to it: snake, pong, a particle fountain, a starfield, an analog clock, and bouncing balls.
+The plan is to slowly grow toward love2d feature parity, so anything you can do there you can eventually do here, written in plain Nim. Right now there's enough to draw shapes, images and text, render to a canvas, run fragment shaders, move things with a transform stack, batch sprites, and build meshes and particle systems, with keyboard, mouse and gamepad input. Beyond graphics it also has sound, a seeded random generator with noise and Bezier curves, CPU pixel buffers, file saving, and data encoding and compression. `examples/all.nim` touches most of the drawing, and there are small demos next to it for snake, pong, a particle fountain, a starfield, an analog clock, bouncing balls, shaders, sprites, transforms, noise and audio.
 
-Shapes get broken into triangles and drawn through a GPU batch renderer, so there's no dependency on SDL2_gfx anymore. Images load through SDL3_image, text goes through SDL3_ttf as UTF-8, and canvases are real render targets. Keyboard, mouse and window events come in through callbacks, and there's basic timing. Shaders, a transform stack, sprite batches, audio and the rest aren't here yet.
+Shapes get broken into triangles and drawn through a GPU batch renderer, so there's no dependency on SDL2_gfx anymore. Images load through SDL3_image, text goes through SDL3_ttf as UTF-8, and canvases are real render targets. Keyboard, mouse, gamepad and window events come in through callbacks, and there's basic timing. Sound runs on SDL3_mixer. The one big gap is that shaders are Metal only for now, so the engine runs on macOS today and other platforms still need cross-platform shader support.
 
 ## Building
 

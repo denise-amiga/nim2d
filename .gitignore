@@ -15,3 +15,10 @@ examples/*
 !examples/*.nim
 !examples/*.ttf
 !examples/*.png
+!examples/assets/
+examples/assets/*
+!examples/assets/*.wav
+!examples/assets/*.nim
+
+# Local-only example directory, not part of the tracked tree.
+examples/danmaku/

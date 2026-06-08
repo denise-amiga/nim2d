@@ -12,19 +12,22 @@ n2d.keydown = proc(nim2d: Nim2d, scancode: SDL_Scancode) =
     nim2d.running = false
 ```
 
-There is no held-key polling yet, so for movement that should continue while a key is held, track the state yourself by flipping a bool in `keydown` and `keyup`.
+For movement that should continue while a key is held, the callbacks aren't what you want, since they only fire on the edges. Ask `isKeyDown` each frame instead.
 
 ```nim
-var goLeft = false
-
-n2d.keydown = proc(nim2d: Nim2d, scancode: SDL_Scancode) =
-  if scancode == SDL_SCANCODE_LEFT: goLeft = true
-
-n2d.keyup = proc(nim2d: Nim2d, scancode: SDL_Scancode) =
-  if scancode == SDL_SCANCODE_LEFT: goLeft = false
-
 n2d.update = proc(nim2d: Nim2d, dt: float) =
-  if goLeft: x -= 200 * dt
+  if isKeyDown(SDL_SCANCODE_LEFT): x -= 200 * dt
+  if isKeyDown(SDL_SCANCODE_RIGHT): x += 200 * dt
+```
+
+To receive typed characters, turn on text input with `startTextInput` and set a `textinput` callback. The text arrives already decoded as a UTF-8 string, so a key and its shifted or accented form come through correctly. `stopTextInput` turns it back off.
+
+```nim
+n2d.load = proc(nim2d: Nim2d) =
+  nim2d.startTextInput()
+
+n2d.textinput = proc(nim2d: Nim2d, text: string) =
+  buffer.add text
 ```
 
 ## Mouse
@@ -39,6 +42,28 @@ n2d.mousemove = proc(nim2d: Nim2d, x, y, dx, dy: float) =
 n2d.mousepressed = proc(nim2d: Nim2d, x, y: float, button, clicks: uint8) =
   if button == 1:
     spawnAt(x, y)
+```
+
+Like the keyboard, the mouse can be polled instead of waited on. `mousePosition` returns where the cursor is, with `mouseX` and `mouseY` if you only want one, and `isMouseDown` tells you whether a button is held. The scroll wheel comes through a `mousewheel` callback, where y is the usual vertical scroll.
+
+```nim
+n2d.mousewheel = proc(nim2d: Nim2d, x, y: float) =
+  zoom += y * 0.1
+
+n2d.update = proc(nim2d: Nim2d, dt: float) =
+  let m = mousePosition()
+  if isMouseDown(1):
+    paint(m.x, m.y)
+```
+
+## Gamepads
+
+Controllers are opened for you when they connect. The `gamepadpressed` and `gamepadreleased` callbacks give you the controller id and which button, and `gamepadaxis` gives the id, the axis, and a value from -1 to 1 (triggers go 0 to 1). The buttons and axes use the SDL3 names, like `SDL_GAMEPAD_BUTTON_SOUTH` and `SDL_GAMEPAD_AXIS_LEFTX`. You can also poll with `isGamepadDown` and `gamepadAxis`, and `connectedGamepads` lists what's plugged in.
+
+```nim
+n2d.gamepadpressed = proc(nim2d: Nim2d, id: SDL_JoystickID, button: SDL_GamepadButton) =
+  if button == SDL_GAMEPAD_BUTTON_SOUTH:
+    jump()
 ```
 
 ## Window events

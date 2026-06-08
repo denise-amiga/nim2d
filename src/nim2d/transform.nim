@@ -41,6 +41,9 @@ func rotate*(t: Transform, radians: float): Transform =
 func scale*(t: Transform, sx, sy: float): Transform =
   t * Transform(a: sx, b: 0, c: 0, d: sy, e: 0, f: 0)
 
+func shear*(t: Transform, kx, ky: float): Transform =
+  t * Transform(a: 1, b: ky, c: kx, d: 1, e: 0, f: 0)
+
 func apply*(t: Transform, x, y: float): (float, float) =
   ## Map a local point through the transform.
   (t.a * x + t.c * y + t.e, t.b * x + t.d * y + t.f)

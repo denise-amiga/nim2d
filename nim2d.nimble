@@ -10,6 +10,8 @@ srcDir        = "src"
 # Dependencies
 requires "nim >= 2.0.0"
 requires "sdl3_nim"
+requires "zippy >= 0.10.0"      # compression for the data module
+requires "nimcrypto >= 0.6.0"   # sha1/sha256/sha512 for the data module
 
 
 # Tasks

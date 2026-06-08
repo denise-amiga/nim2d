@@ -9,7 +9,9 @@
 
 import std/math
 import types
+import transform
 import backend/renderer
+import nim2d/math as m   # triangulate / isConvex for concave polygon fill
 
 # --- helpers ---------------------------------------------------------------
 
@@ -57,7 +59,7 @@ proc polyline(nim2d: Nim2d, pts: openArray[Vec2], closed: bool, width = 1.0) =
   if closed and pts.len > 2:
     nim2d.segQuad(pts[^1], pts[0], width)
 
-proc fillConvex(nim2d: Nim2d, pts: openArray[Vec2]) =
+proc fillConvexFan(nim2d: Nim2d, pts: openArray[Vec2]) =
   ## Fan fill from the polygon centroid (correct for convex polygons).
   if pts.len < 3: return
   var cx, cy: float
@@ -70,6 +72,26 @@ proc fillConvex(nim2d: Nim2d, pts: openArray[Vec2]) =
   for i, p in pts: rim[i] = p
   rim[^1] = pts[0]
   nim2d.fillFan((cx, cy), rim)
+
+proc fillPolygon(nim2d: Nim2d, pts: openArray[Vec2]) =
+  ## Fill a polygon that may be concave. Convex outlines take the cheap centroid
+  ## fan; concave ones are split into triangles by ear clipping. Input that
+  ## cannot be triangulated (self-intersecting or degenerate) falls back to the
+  ## fan, so drawing never raises.
+  if pts.len < 3: return
+  if m.isConvex(pts):
+    nim2d.fillConvexFan(pts)
+    return
+  var idx: seq[uint32]
+  try:
+    idx = m.triangulate(pts)
+  except ValueError:
+    nim2d.fillConvexFan(pts)
+    return
+  let c = norm(nim2d.color)
+  var verts = newSeq[Vertex](pts.len)
+  for i, p in pts: verts[i] = mkVert(p.x, p.y, c)
+  nim2d.emitColored(verts, idx)
 
 iterator arcPoints(cx, cy, rx, ry, a1, a2: float, segments: int): Vec2 =
   let steps = max(segments, 1)
@@ -94,6 +116,44 @@ proc setBlendMode*(nim2d: Nim2d, mode: string) =
     of "add": bmAdd
     of "mod", "multiply": bmMod
     else: bmNone
+
+# --- transform stack -------------------------------------------------------
+
+proc push*(nim2d: Nim2d) =
+  ## Save the current transform so a later `pop` restores it.
+  nim2d.gpu.transformStack.add nim2d.gpu.transform
+
+proc pop*(nim2d: Nim2d) =
+  ## Restore the transform saved by the matching `push`.
+  if nim2d.gpu.transformStack.len > 0:
+    nim2d.gpu.transform = nim2d.gpu.transformStack.pop()
+
+proc origin*(nim2d: Nim2d) =
+  ## Reset the current transform to the identity.
+  nim2d.gpu.transform = identity()
+
+proc translate*(nim2d: Nim2d, dx, dy: float) =
+  nim2d.gpu.transform = nim2d.gpu.transform.translate(dx, dy)
+
+proc rotate*(nim2d: Nim2d, radians: float) =
+  nim2d.gpu.transform = nim2d.gpu.transform.rotate(radians)
+
+proc scale*(nim2d: Nim2d, sx, sy: float) =
+  nim2d.gpu.transform = nim2d.gpu.transform.scale(sx, sy)
+
+proc shear*(nim2d: Nim2d, kx, ky: float) =
+  nim2d.gpu.transform = nim2d.gpu.transform.shear(kx, ky)
+
+# --- scissor ---------------------------------------------------------------
+
+proc setScissor*(nim2d: Nim2d, x, y, w, h: float) =
+  ## Clip drawing to a rectangle until the scissor is cleared.
+  nim2d.gpu.curScissor = Scissor(on: true, x: x.int32, y: y.int32,
+                                 w: w.int32, h: h.int32)
+
+proc setScissor*(nim2d: Nim2d) =
+  ## Stop clipping.
+  nim2d.gpu.curScissor = Scissor(on: false)
 
 # --- shapes ----------------------------------------------------------------
 
@@ -135,16 +195,16 @@ proc roundedRectPoints(x, y, w, h, r: float, seg = 8): seq[Vec2] =
 proc rectangle*(nim2d: Nim2d, x, y, w, h: float, filled = false, roundness = 0.0) =
   if roundness > 0:
     let pts = roundedRectPoints(x, y, w, h, roundness)
-    if filled: nim2d.fillConvex(pts)
+    if filled: nim2d.fillConvexFan(pts)
     else: nim2d.polyline(pts, closed = true)
   else:
     let pts = @[(x, y), (x + w, y), (x + w, y + h), (x, y + h)]
-    if filled: nim2d.fillConvex(pts)
+    if filled: nim2d.fillConvexFan(pts)
     else: nim2d.polyline(pts, closed = true)
 
 proc triangle*(nim2d: Nim2d, x1, y1, x2, y2, x3, y3: float, filled = false) =
   let pts = @[(x1, y1), (x2, y2), (x3, y3)]
-  if filled: nim2d.fillConvex(pts)
+  if filled: nim2d.fillConvexFan(pts)
   else: nim2d.polyline(pts, closed = true)
 
 proc polygon*(nim2d: Nim2d, xs, ys: openArray[float], filled = false) =
@@ -154,7 +214,7 @@ proc polygon*(nim2d: Nim2d, xs, ys: openArray[float], filled = false) =
     raise newException(ValueError, "polygon: need at least 3 points")
   var pts = newSeq[Vec2](xs.len)
   for i in 0 ..< xs.len: pts[i] = (xs[i], ys[i])
-  if filled: nim2d.fillConvex(pts)
+  if filled: nim2d.fillPolygon(pts)
   else: nim2d.polyline(pts, closed = true)
 
 proc line*(nim2d: Nim2d, points: openArray[Vec2], width = 1.0) =

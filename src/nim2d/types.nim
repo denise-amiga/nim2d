@@ -6,6 +6,7 @@
 ## shim and the transform math.
 
 import backend/sdl
+import transform
 
 type
   Color* = tuple[r, g, b, a: uint8]
@@ -39,18 +40,45 @@ type
   Canvas* = ref object of Texture
     ## A render target (GPU texture created with COLOR_TARGET usage).
 
+  Quad* = object
+    ## A rectangular sub-region of a texture, as texcoords plus its pixel size.
+    u0*, v0*, u1*, v1*: float32
+    w*, h*: float32
+
   Font* = ref object
     engine*: pointer      ## TTF_TextEngine (GPU text engine)
     font*: pointer        ## TTF_Font
     size*: cint
 
+  Shader* = ref object
+    ## A user fragment shader compiled into one pipeline per blend mode, with an
+    ## optional fragment uniform buffer filled by `send`.
+    pipelines*: array[BlendMode, ptr SDL_GPUGraphicsPipeline]
+    uniform*: seq[byte]
+    hasUniform*: bool
+
+  Scissor* = object
+    on*: bool
+    x*, y*, w*, h*: int32
+
+  Filesystem* = ref object
+    ## A small virtual filesystem: a writable save directory, a read-only source
+    ## directory, and extra read directories added with `mount`. The behaviour
+    ## lives in the filesystem module.
+    saveDir*: string
+    sourceDir*: string
+    mounts*: seq[string]
+    identitySet*: bool
+
   # --- GPU context ---------------------------------------------------------
 
   DrawCmd* = object
-    ## A run of indices sharing pipeline/blend/texture state.
+    ## A run of indices sharing pipeline/blend/texture/scissor/shader state.
     kind*: PipelineKind
     blend*: BlendMode
     texture*: ptr SDL_GPUTexture
+    shader*: Shader
+    scissor*: Scissor
     firstIndex*: uint32
     indexCount*: uint32
 
@@ -70,6 +98,7 @@ type
     window*: ptr SDL_Window
     swFormat*: SDL_GPUTextureFormat   ## swapchain format; render targets must match it
     sampler*: ptr SDL_GPUSampler
+    whiteTex*: ptr SDL_GPUTexture     ## 1x1 white, bound when a shader draw has no texture
     pipelines*: array[PipelineKind, array[BlendMode, ptr SDL_GPUGraphicsPipeline]]
 
     # CPU-side geometry for the whole frame (deferred upload)
@@ -90,6 +119,14 @@ type
     passes*: seq[RenderPassRec]
     tempTextures*: seq[ptr SDL_GPUTexture]  ## released after the frame submits
 
+    # Current transform, baked into vertices as they are added
+    transform*: Transform
+    transformStack*: seq[Transform]
+
+    # Current scissor and shader, recorded into each draw command
+    curScissor*: Scissor
+    curShader*: Shader
+
   # --- Engine --------------------------------------------------------------
 
   Nim2d* = ref object
@@ -99,6 +136,7 @@ type
     background*: Color
     color*: Color
     font*: Font
+    fs*: Filesystem
     blend*: BlendMode
     running*: bool
 
@@ -118,6 +156,11 @@ type
     mousemove*: proc(nim2d: Nim2d, x, y, dx, dy: float)
     mousepressed*: proc(nim2d: Nim2d, x, y: float, button, clicks: uint8)
     mousereleased*: proc(nim2d: Nim2d, x, y: float, button, clicks: uint8)
+    mousewheel*: proc(nim2d: Nim2d, x, y: float)
+    textinput*: proc(nim2d: Nim2d, text: string)
+    gamepadpressed*: proc(nim2d: Nim2d, id: SDL_JoystickID, button: SDL_GamepadButton)
+    gamepadreleased*: proc(nim2d: Nim2d, id: SDL_JoystickID, button: SDL_GamepadButton)
+    gamepadaxis*: proc(nim2d: Nim2d, id: SDL_JoystickID, axis: SDL_GamepadAxis, value: float)
 
     # Window events
     window_shown*: proc(nim2d: Nim2d)

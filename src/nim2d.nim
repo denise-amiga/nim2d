@@ -11,8 +11,22 @@ import nim2d/font
 import nim2d/timer
 import nim2d/events
 import nim2d/window
+import nim2d/keyboard
+import nim2d/mouse
+import nim2d/gamepad
+import nim2d/spritebatch
+import nim2d/mesh
+import nim2d/particlesystem
+import nim2d/shader
+import nim2d/math
+import nim2d/data
+import nim2d/imagedata
+import nim2d/filesystem
+import nim2d/audio
 
 export types, graphics, image, canvas, font, timer, window
+export keyboard, mouse, gamepad, spritebatch, mesh, particlesystem, shader
+export math, data, imagedata, filesystem, audio
 export sdl  # SDL_Scancode, SDL_SCANCODE_*, etc. for callback handlers
 
 # --- callback setters ------------------------------------------------------
@@ -26,6 +40,11 @@ proc `keyup=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, scancode: SDL_Scancode)) = n2d.
 proc `mousemove=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, x, y, dx, dy: float)) = n2d.mousemove = p
 proc `mousepressed=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, x, y: float, button, clicks: uint8)) = n2d.mousepressed = p
 proc `mousereleased=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, x, y: float, button, clicks: uint8)) = n2d.mousereleased = p
+proc `mousewheel=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, x, y: float)) = n2d.mousewheel = p
+proc `textinput=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, text: string)) = n2d.textinput = p
+proc `gamepadpressed=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: SDL_JoystickID, button: SDL_GamepadButton)) = n2d.gamepadpressed = p
+proc `gamepadreleased=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: SDL_JoystickID, button: SDL_GamepadButton)) = n2d.gamepadreleased = p
+proc `gamepadaxis=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: SDL_JoystickID, axis: SDL_GamepadAxis, value: float)) = n2d.gamepadaxis = p
 
 proc `window_shown=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) = n2d.window_shown = p
 proc `window_hidden=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) = n2d.window_hidden = p
@@ -65,7 +84,7 @@ proc clear*(nim2d: Nim2d) =
 
 proc newNim2d*(title: string, x, y, width, height: cint,
                background: Color): Nim2d =
-  if not SDL_Init(SDL_InitFlags(SDL_INIT_VIDEO)):
+  if not SDL_Init(SDL_InitFlags(SDL_INIT_VIDEO or SDL_INIT_GAMEPAD)):
     raise newException(CatchableError, "SDL_Init failed: " & $SDL_GetError())
 
   let win = SDL_CreateWindow(title.cstring, width, height, SDL_WindowFlags(0))
@@ -80,6 +99,7 @@ proc newNim2d*(title: string, x, y, width, height: cint,
     width: width, height: height,
     gpu: newGpuContext(win),
     background: background,
+    fs: newFilesystem(),
     color: (255'u8, 255'u8, 255'u8, 255'u8),
     blend: bmAlpha,
     running: true,
@@ -91,11 +111,17 @@ proc newNim2d*(title: string, x, y, width, height: cint,
     mousemove: proc(nim2d: Nim2d, x, y, dx, dy: float) = discard,
     mousepressed: proc(nim2d: Nim2d, x, y: float, button, clicks: uint8) = discard,
     mousereleased: proc(nim2d: Nim2d, x, y: float, button, clicks: uint8) = discard,
+    mousewheel: proc(nim2d: Nim2d, x, y: float) = discard,
+    textinput: proc(nim2d: Nim2d, text: string) = discard,
+    gamepadpressed: proc(nim2d: Nim2d, id: SDL_JoystickID, button: SDL_GamepadButton) = discard,
+    gamepadreleased: proc(nim2d: Nim2d, id: SDL_JoystickID, button: SDL_GamepadButton) = discard,
+    gamepadaxis: proc(nim2d: Nim2d, id: SDL_JoystickID, axis: SDL_GamepadAxis, value: float) = discard,
     window_shown: noop, window_hidden: noop, window_moved: noop,
     window_resized: noop, window_minimized: noop, window_maximized: noop,
     window_restored: noop, window_enter: noop, window_leave: noop,
     window_focus_gained: noop, window_focus_lost: noop, window_close: noop,
   )
+  result.initAudio()
 
 proc newNim2d*(title: string, x, y, width, height: cint): Nim2d =
   newNim2d(title, x, y, width, height, (89'u8, 157'u8, 220'u8, 255'u8))
@@ -120,6 +146,7 @@ proc play*(nim2d: Nim2d) =
       nim2d.draw(nim2d)
       nim2d.gpu.endFrame()
 
+  nim2d.shutdownAudio()
   nim2d.gpu.destroy()
   SDL_DestroyWindow(nim2d.gpu.window)
   sdlQuit()
