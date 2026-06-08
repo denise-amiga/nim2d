@@ -1,26 +1,25 @@
-# Nim2D
+# nim2d
 
-![](https://github.com/beshrkayali/nim2d/workflows/Tests/badge.svg)
+[![Tests](https://github.com/beshrkayali/nim2d/actions/workflows/tests.yml/badge.svg)](https://github.com/beshrkayali/nim2d/actions/workflows/tests.yml)
 
-Nim2D is a small 2D game engine for Nim, loosely modeled on love2d. It started as a way for me to get my hands dirty with Nim and SDL, and it has since moved over to Nim 2.x and SDL3, drawing through SDL's GPU API. It's pre-alpha, so expect rough edges.
+nim2d is a 2D game framework for Nim, modeled on love2d. It is built on SDL3 and SDL's GPU API, licensed under zlib, and runs on macOS, Linux and Windows. It is pre-alpha. It covers drawing (shapes, images, text, canvases, fragment shaders, a transform stack, sprite batches, meshes and particle systems), keyboard, mouse, gamepad and touch input, audio, a seeded random and noise module, CPU pixel buffers, the filesystem, data encoding and compression, window and system controls, background threads, and rigid-body physics through Box2D. The renderer is an SDL_GPU batch renderer. Images load through SDL3_image, text through SDL3_ttf, and sound through SDL3_mixer. The built-in shaders are written in GLSL and compiled ahead of time to SPIR-V and MSL, so the engine draws on both Vulkan and Metal. A shader you pass to `newShader` is MSL only for now.
 
-The plan is to slowly grow toward love2d feature parity, so anything you can do there you can eventually do here, written in plain Nim. Right now there's enough to draw shapes, images and text, render to a canvas, run fragment shaders, move things with a transform stack, batch sprites, and build meshes and particle systems, with keyboard, mouse and gamepad input. Beyond graphics it also has sound, a seeded random generator with noise and Bezier curves, CPU pixel buffers, file saving, data encoding and compression, platform and window controls, background threads, and rigid-body physics through Box2D. `examples/all.nim` touches most of the drawing, and there are small demos next to it for snake, pong, a particle fountain, a starfield, an analog clock, bouncing balls, shaders, sprites, transforms, noise, audio, the system and window controls, a physics sandbox, background threads, and touch.
+## Documentation
 
-Shapes get broken into triangles and drawn through a GPU batch renderer, so there's no dependency on SDL2_gfx anymore. Images load through SDL3_image, text goes through SDL3_ttf as UTF-8, and canvases are real render targets. Keyboard, mouse, gamepad and window events come in through callbacks, and there's basic timing. Sound runs on SDL3_mixer. The one big gap is that shaders are Metal only for now, so the engine runs on macOS today and other platforms still need cross-platform shader support.
+Guides are in `docs/`. An API reference is generated from the source with `make docs`, and `make serve` builds and serves it locally.
 
 ## Building
 
-You need Nim 2.0 or newer and the SDL3 libraries (SDL3, SDL3_image, SDL3_ttf, and later SDL3_mixer for audio).
+You need Nim 2.0 or newer and the SDL3 libraries (SDL3, SDL3_image, SDL3_ttf, SDL3_mixer). The physics module also needs Box2D.
 
-On macOS:
+macOS:
 
 ```sh
 brew install sdl3 sdl3_image sdl3_ttf sdl3_mixer
+brew install box2d   # only for physics
 ```
 
-The physics module also needs Box2D (`brew install box2d`), but only if you use it, since it is imported on its own with `import nim2d/physics`.
-
-nim2d uses the [sdl3_nim](https://github.com/dinau/sdl3_nim) binding for the core SDL3 and GPU API, with small local bindings for SDL3_image and SDL3_ttf. nimble pulls it in for you. One detail worth knowing about the build is that nim2d links SDL3 directly at compile time with `--dynlibOverride` (set up in `config.nims`) instead of loading it at runtime, because the binding looks for `libSDL3.so`, which doesn't exist on macOS. So the libraries need to be installed when you build.
+On Linux, install the SDL3 development packages or build them from source. On Windows, use the prebuilt MinGW development packages. The CI workflow in `.github/workflows/tests.yml` builds them on all three platforms for reference. nim2d uses the [sdl3_nim](https://github.com/dinau/sdl3_nim) binding, pulled in by nimble, with local bindings for SDL3_image, SDL3_ttf and SDL3_mixer. It links SDL3 at build time with `--dynlibOverride` (set in `config.nims`), so the libraries must be installed when you build. Set `NIM2D_SDL_PREFIX` to point at a non-default install location.
 
 ## Running
 
@@ -29,3 +28,21 @@ nimble examples              # build and run examples/all.nim
 nim c -r examples/snake.nim  # or any other example
 nimble test                  # headless unit tests
 ```
+
+The examples are listed in `docs/examples.md`.
+
+## Tests
+
+`nimble test` runs the headless suite: math, data, filesystem, image buffers, audio helpers, system queries and thread channels. The physics check needs Box2D and runs on its own with `nim c -r tests/physics_smoke.nim`. CI runs on macOS, Linux and Windows.
+
+## Dependencies
+
+- Nim 2.0 or newer
+- SDL3, SDL3_image, SDL3_ttf, SDL3_mixer
+- [sdl3_nim](https://github.com/dinau/sdl3_nim), [zippy](https://github.com/guzba/zippy) and [nimcrypto](https://github.com/cheatfate/nimcrypto), pulled in by nimble
+- Box2D, only for the physics module
+- glslc and the SDL_shadercross CLI, only to regenerate the built-in shaders with `make shaders`
+
+## License
+
+Released under the zlib license.

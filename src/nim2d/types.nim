@@ -97,6 +97,7 @@ type
     device*: ptr SDL_GPUDevice
     window*: ptr SDL_Window
     swFormat*: SDL_GPUTextureFormat   ## swapchain format; render targets must match it
+    shaderFormat*: SDL_GPUShaderFormat  ## MSL or SPIR-V, chosen from the device backend
     sampler*: ptr SDL_GPUSampler
     whiteTex*: ptr SDL_GPUTexture     ## 1x1 white, bound when a shader draw has no texture
     pipelines*: array[PipelineKind, array[BlendMode, ptr SDL_GPUGraphicsPipeline]]

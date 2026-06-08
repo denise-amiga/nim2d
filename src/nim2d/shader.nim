@@ -22,7 +22,7 @@ import backend/renderer
 const Preamble = """
 #include <metal_stdlib>
 using namespace metal;
-struct VSOutput { float4 position [[position]]; float2 uv; float4 color; };
+struct VSOutput { float4 position [[position]]; float2 uv [[user(locn0)]]; float4 color [[user(locn1)]]; };
 """
 
 proc newShader*(nim2d: Nim2d, fragmentSrc: string, uniformFloats = 0): Shader =

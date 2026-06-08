@@ -28,13 +28,13 @@ proc ortho(w, h: int32): array[16, float32] =
 # --- device / pipeline setup ----------------------------------------------
 
 proc makeShader(device: ptr SDL_GPUDevice, src: string, entry: cstring,
-                stage: SDL_GPUShaderStage, numSamplers, numUniforms: uint32):
-                ptr SDL_GPUShader =
+                stage: SDL_GPUShaderStage, numSamplers, numUniforms: uint32,
+                format: SDL_GPUShaderFormat): ptr SDL_GPUShader =
   var ci = SDL_GPUShaderCreateInfo(
     code_size: csize_t(src.len),
     code: cast[ptr Uint8](src.cstring),
     entrypoint: entry,
-    format: SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_MSL),
+    format: format,
     stage: stage,
     num_samplers: numSamplers,
     num_uniform_buffers: numUniforms,
@@ -110,12 +110,14 @@ proc makePipeline(gpu: GpuContext, vs, fs: ptr SDL_GPUShader,
 
 proc buildPipelines(gpu: GpuContext) =
   let dev = gpu.device
-  let vs = makeShader(dev, VertexShaderMSL, "vertexMain",
-                      SDL_GPU_SHADERSTAGE_VERTEX, 0, 1)
-  let fsColor = makeShader(dev, FragmentColorMSL, "fragmentColor",
-                           SDL_GPU_SHADERSTAGE_FRAGMENT, 0, 0)
-  let fsTex = makeShader(dev, FragmentTextureMSL, "fragmentTexture",
-                         SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 0)
+  let spirv = gpu.shaderFormat == SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_SPIRV)
+  let entry = (if spirv: "main".cstring else: "main0".cstring)
+  let vs = makeShader(dev, (if spirv: VertexSPIRV else: VertexMSL), entry,
+                      SDL_GPU_SHADERSTAGE_VERTEX, 0, 1, gpu.shaderFormat)
+  let fsColor = makeShader(dev, (if spirv: FragmentColorSPIRV else: FragmentColorMSL),
+                           entry, SDL_GPU_SHADERSTAGE_FRAGMENT, 0, 0, gpu.shaderFormat)
+  let fsTex = makeShader(dev, (if spirv: FragmentTextureSPIRV else: FragmentTextureMSL),
+                         entry, SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 0, gpu.shaderFormat)
   for blend in BlendMode:
     gpu.pipelines[pkColored][blend] = makePipeline(gpu, vs, fsColor, blend)
     gpu.pipelines[pkTextured][blend] = makePipeline(gpu, vs, fsTex, blend)
@@ -128,11 +130,15 @@ proc createShaderPipelines*(gpu: GpuContext, fragmentSrc: string,
   ## Build one pipeline per blend mode from a user fragment shader (entrypoint
   ## "frag"), reusing the built-in vertex shader. The fragment gets a sampler at
   ## slot 0 and, when hasUniform is set, a fragment uniform buffer at slot 0.
+  ## The user source is MSL, so user shaders run on the Metal backend.
   let dev = gpu.device
-  let vs = makeShader(dev, VertexShaderMSL, "vertexMain",
-                      SDL_GPU_SHADERSTAGE_VERTEX, 0, 1)
+  let spirv = gpu.shaderFormat == SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_SPIRV)
+  let vs = makeShader(dev, (if spirv: VertexSPIRV else: VertexMSL),
+                      (if spirv: "main".cstring else: "main0".cstring),
+                      SDL_GPU_SHADERSTAGE_VERTEX, 0, 1, gpu.shaderFormat)
   let fs = makeShader(dev, fragmentSrc, "frag", SDL_GPU_SHADERSTAGE_FRAGMENT,
-                      1, (if hasUniform: 1'u32 else: 0'u32))
+                      1, (if hasUniform: 1'u32 else: 0'u32),
+                      SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_MSL))
   for blend in BlendMode:
     result[blend] = makePipeline(gpu, vs, fs, blend)
   SDL_ReleaseGPUShader(dev, vs)
@@ -154,11 +160,19 @@ proc createTextureFromPixels*(gpu: GpuContext, pixels: pointer, w, h, pitch: int
 
 proc newGpuContext*(window: ptr SDL_Window): GpuContext =
   result = GpuContext(window: window)
-  # Requests MSL shaders (the Metal backend).
-  result.device = SDL_CreateGPUDevice(
-    SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_MSL), false, nil)
+  # Accept either shader format and let SDL choose a backend: Metal with MSL on
+  # Apple platforms, Vulkan with SPIR-V on Linux and Windows.
+  let want = SDL_GPUShaderFormat(uint32(SDL_GPU_SHADERFORMAT_MSL) or
+                                 uint32(SDL_GPU_SHADERFORMAT_SPIRV))
+  result.device = SDL_CreateGPUDevice(want, false, nil)
   if result.device == nil:
     raise newException(CatchableError, "SDL_CreateGPUDevice failed: " & $SDL_GetError())
+  # Record which format the chosen backend actually takes, to pick the shader blob.
+  let got = SDL_GetGPUShaderFormats(result.device)
+  if (uint32(got) and uint32(SDL_GPU_SHADERFORMAT_SPIRV)) != 0:
+    result.shaderFormat = SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_SPIRV)
+  else:
+    result.shaderFormat = SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_MSL)
   if not SDL_ClaimWindowForGPUDevice(result.device, window):
     raise newException(CatchableError, "ClaimWindowForGPUDevice failed: " & $SDL_GetError())
   result.swFormat = SDL_GetGPUSwapchainTextureFormat(result.device, window)

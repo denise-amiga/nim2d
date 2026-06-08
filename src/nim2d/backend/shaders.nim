@@ -1,67 +1,19 @@
 ## Built-in shaders for the 2D batch renderer.
 ##
-## These are Metal Shading Language (MSL) sources, compiled at runtime by the
-## Metal backend of SDL_GPU.
+## Each shader is authored once in GLSL (`shaders/*.vert`, `shaders/*.frag`) and
+## compiled offline by `make shaders` into two blobs: SPIR-V for the Vulkan
+## backend (Linux, and Windows without a Metal driver) and MSL for the Metal
+## backend (macOS, iOS). The renderer picks the matching blob at runtime from
+## `SDL_GetGPUShaderFormats`. Both blobs are committed, so an ordinary build needs
+## no shader toolchain.
 ##
-## A couple of conventions come from the SDL_GPU Metal resource model. Vertex
-## attributes come in through stage_in, set up by the pipeline layout. Uniform
-## buffers start at buffer slot 0, fragment textures at texture slot 0, and
-## samplers at sampler slot 0.
+## The SPIR-V entry point is `main`; the MSL entry point is `main0`, since
+## SPIRV-Cross renames `main` when it transpiles (`main` is reserved in MSL).
 
-const VertexShaderMSL* = """
-#include <metal_stdlib>
-using namespace metal;
-
-struct VSInput {
-    float2 position [[attribute(0)]];
-    float2 uv       [[attribute(1)]];
-    float4 color    [[attribute(2)]];
-};
-struct VSOutput {
-    float4 position [[position]];
-    float2 uv;
-    float4 color;
-};
-struct Uniforms { float4x4 mvp; };
-
-vertex VSOutput vertexMain(VSInput in [[stage_in]],
-                           constant Uniforms& u [[buffer(0)]]) {
-    VSOutput out;
-    out.position = u.mvp * float4(in.position, 0.0, 1.0);
-    out.uv = in.uv;
-    out.color = in.color;
-    return out;
-}
-"""
-
-const FragmentColorMSL* = """
-#include <metal_stdlib>
-using namespace metal;
-
-struct VSOutput {
-    float4 position [[position]];
-    float2 uv;
-    float4 color;
-};
-
-fragment float4 fragmentColor(VSOutput in [[stage_in]]) {
-    return in.color;
-}
-"""
-
-const FragmentTextureMSL* = """
-#include <metal_stdlib>
-using namespace metal;
-
-struct VSOutput {
-    float4 position [[position]];
-    float2 uv;
-    float4 color;
-};
-
-fragment float4 fragmentTexture(VSOutput in [[stage_in]],
-                                texture2d<float> tex [[texture(0)]],
-                                sampler samp [[sampler(0)]]) {
-    return tex.sample(samp, in.uv) * in.color;
-}
-"""
+const
+  VertexSPIRV* = staticRead("shaders/vertex.spv")
+  VertexMSL* = staticRead("shaders/vertex.metal")
+  FragmentColorSPIRV* = staticRead("shaders/color.spv")
+  FragmentColorMSL* = staticRead("shaders/color.metal")
+  FragmentTextureSPIRV* = staticRead("shaders/texture.spv")
+  FragmentTextureMSL* = staticRead("shaders/texture.metal")
