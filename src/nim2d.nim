@@ -31,7 +31,7 @@ import nim2d/thread
 export types, graphics, color, image, canvas, font, timer, window
 export keyboard, mouse, gamepad, spritebatch, mesh, particlesystem, shader
 export math, data, imagedata, filesystem, audio, system, touch, thread
-export sdl  # SDL_Scancode, SDL_SCANCODE_*, etc. for callback handlers
+export sdl  # the raw SDL bindings, as an escape hatch for advanced use
 
 # --- callback setters ------------------------------------------------------
 
@@ -46,9 +46,9 @@ proc `mousepressed=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, x, y: float, button: Mou
 proc `mousereleased=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, x, y: float, button: MouseButton, clicks: uint8)) = n2d.mousereleased = p
 proc `mousewheel=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, x, y: float)) = n2d.mousewheel = p
 proc `textinput=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, text: string)) = n2d.textinput = p
-proc `gamepadpressed=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: SDL_JoystickID, button: SDL_GamepadButton)) = n2d.gamepadpressed = p
-proc `gamepadreleased=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: SDL_JoystickID, button: SDL_GamepadButton)) = n2d.gamepadreleased = p
-proc `gamepadaxis=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: SDL_JoystickID, axis: SDL_GamepadAxis, value: float)) = n2d.gamepadaxis = p
+proc `gamepadpressed=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: GamepadId, button: GamepadButton)) = n2d.gamepadpressed = p
+proc `gamepadreleased=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: GamepadId, button: GamepadButton)) = n2d.gamepadreleased = p
+proc `gamepadaxis=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: GamepadId, axis: GamepadAxis, value: float)) = n2d.gamepadaxis = p
 proc `touchpressed=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: int64, x, y, pressure: float)) = n2d.touchpressed = p
 proc `touchmoved=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: int64, x, y, pressure: float)) = n2d.touchmoved = p
 proc `touchreleased=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: int64, x, y, pressure: float)) = n2d.touchreleased = p
@@ -164,9 +164,9 @@ proc newNim2d*(title: string, x, y, width, height: cint,
     mousereleased: proc(nim2d: Nim2d, x, y: float, button: MouseButton, clicks: uint8) = discard,
     mousewheel: proc(nim2d: Nim2d, x, y: float) = discard,
     textinput: proc(nim2d: Nim2d, text: string) = discard,
-    gamepadpressed: proc(nim2d: Nim2d, id: SDL_JoystickID, button: SDL_GamepadButton) = discard,
-    gamepadreleased: proc(nim2d: Nim2d, id: SDL_JoystickID, button: SDL_GamepadButton) = discard,
-    gamepadaxis: proc(nim2d: Nim2d, id: SDL_JoystickID, axis: SDL_GamepadAxis, value: float) = discard,
+    gamepadpressed: proc(nim2d: Nim2d, id: GamepadId, button: GamepadButton) = discard,
+    gamepadreleased: proc(nim2d: Nim2d, id: GamepadId, button: GamepadButton) = discard,
+    gamepadaxis: proc(nim2d: Nim2d, id: GamepadId, axis: GamepadAxis, value: float) = discard,
     touchpressed: proc(nim2d: Nim2d, id: int64, x, y, pressure: float) = discard,
     touchmoved: proc(nim2d: Nim2d, id: int64, x, y, pressure: float) = discard,
     touchreleased: proc(nim2d: Nim2d, id: int64, x, y, pressure: float) = discard,

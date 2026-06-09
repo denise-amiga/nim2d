@@ -60,11 +60,11 @@ The cursor and capture have their own controls. `setMouseVisible` shows or hides
 
 ## Gamepads
 
-Controllers are opened for you when they connect. The `gamepadpressed` and `gamepadreleased` callbacks give you the controller id and which button, and `gamepadaxis` gives the id, the axis, and a value from -1 to 1 (triggers go 0 to 1). The buttons and axes use the SDL3 names, like `SDL_GAMEPAD_BUTTON_SOUTH` and `SDL_GAMEPAD_AXIS_LEFTX`. You can also poll with `isGamepadDown` and `gamepadAxis`, and `connectedGamepads` lists what's plugged in.
+Controllers are opened for you when they connect. The `gamepadpressed` and `gamepadreleased` callbacks give you the controller id and which button, and `gamepadaxis` gives the id, the axis, and a value from -1 to 1 (triggers go 0 to 1). The button is a `GamepadButton` and the axis a `GamepadAxis`, both named for an Xbox-style pad: the face buttons are `GamepadButton.south`, `.east`, `.west` and `.north` (A, B, X, Y), and the sticks are `GamepadAxis.leftX`, `.leftY` and so on. You can also poll with `isGamepadDown` and `gamepadAxis`, and `connectedGamepads` lists what's plugged in.
 
 ```nim
-n2d.gamepadpressed = proc(nim2d: Nim2d, id: SDL_JoystickID, button: SDL_GamepadButton) =
-  if button == SDL_GAMEPAD_BUTTON_SOUTH:
+n2d.gamepadpressed = proc(nim2d: Nim2d, id: GamepadId, button: GamepadButton) =
+  if button == GamepadButton.south:
     jump()
 ```
 

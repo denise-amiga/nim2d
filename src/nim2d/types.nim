@@ -41,6 +41,27 @@ type
     ## A mouse button, delivered to the mousepressed and mousereleased callbacks.
     left, right, middle, x1, x2
 
+  GamepadId* = SDL_JoystickID
+    ## Identifies a connected controller, handed to the gamepad callbacks and
+    ## the polling procs. Opaque; you do not build one yourself.
+
+  GamepadButton* {.pure.} = enum
+    ## A controller button, delivered to the gamepad callbacks and accepted by
+    ## isGamepadDown. The face buttons are named by position: south/east/west/
+    ## north are A/B/X/Y on an Xbox-style pad.
+    unknown
+    south, east, west, north
+    back, guide, start
+    leftStick, rightStick
+    leftShoulder, rightShoulder
+    dpadUp, dpadDown, dpadLeft, dpadRight
+
+  GamepadAxis* {.pure.} = enum
+    ## A controller axis, delivered to the gamepadaxis callback and accepted by
+    ## gamepadAxis. Sticks run -1 to 1, triggers 0 to 1.
+    unknown
+    leftX, leftY, rightX, rightY, leftTrigger, rightTrigger
+
   PipelineKind* = enum
     pkColored, pkTextured
 
@@ -208,9 +229,9 @@ type
     mousereleased*: proc(nim2d: Nim2d, x, y: float, button: MouseButton, clicks: uint8)
     mousewheel*: proc(nim2d: Nim2d, x, y: float)
     textinput*: proc(nim2d: Nim2d, text: string)
-    gamepadpressed*: proc(nim2d: Nim2d, id: SDL_JoystickID, button: SDL_GamepadButton)
-    gamepadreleased*: proc(nim2d: Nim2d, id: SDL_JoystickID, button: SDL_GamepadButton)
-    gamepadaxis*: proc(nim2d: Nim2d, id: SDL_JoystickID, axis: SDL_GamepadAxis, value: float)
+    gamepadpressed*: proc(nim2d: Nim2d, id: GamepadId, button: GamepadButton)
+    gamepadreleased*: proc(nim2d: Nim2d, id: GamepadId, button: GamepadButton)
+    gamepadaxis*: proc(nim2d: Nim2d, id: GamepadId, axis: GamepadAxis, value: float)
     touchpressed*: proc(nim2d: Nim2d, id: int64, x, y, pressure: float)
     touchmoved*: proc(nim2d: Nim2d, id: int64, x, y, pressure: float)
     touchreleased*: proc(nim2d: Nim2d, id: int64, x, y, pressure: float)

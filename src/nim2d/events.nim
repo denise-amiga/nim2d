@@ -40,11 +40,14 @@ proc dispatch*(nim2d: Nim2d, evt: SDL_Event) =
   elif t == uint32(SDL_EVENT_GAMEPAD_REMOVED):
     closeGamepad(evt.gdevice.which)
   elif t == uint32(SDL_EVENT_GAMEPAD_BUTTON_DOWN):
-    nim2d.gamepadpressed(nim2d, evt.gbutton.which, SDL_GamepadButton(evt.gbutton.button))
+    nim2d.gamepadpressed(nim2d, evt.gbutton.which,
+                         toGamepadButton(SDL_GamepadButton(evt.gbutton.button)))
   elif t == uint32(SDL_EVENT_GAMEPAD_BUTTON_UP):
-    nim2d.gamepadreleased(nim2d, evt.gbutton.which, SDL_GamepadButton(evt.gbutton.button))
+    nim2d.gamepadreleased(nim2d, evt.gbutton.which,
+                          toGamepadButton(SDL_GamepadButton(evt.gbutton.button)))
   elif t == uint32(SDL_EVENT_GAMEPAD_AXIS_MOTION):
-    nim2d.gamepadaxis(nim2d, evt.gaxis.which, SDL_GamepadAxis(evt.gaxis.axis),
+    nim2d.gamepadaxis(nim2d, evt.gaxis.which,
+                      toGamepadAxis(SDL_GamepadAxis(evt.gaxis.axis)),
                       evt.gaxis.value.float / 32767.0)
   elif t == uint32(SDL_EVENT_FINGER_DOWN):
     nim2d.touchpressed(nim2d, cast[int64](evt.tfinger.fingerID),
