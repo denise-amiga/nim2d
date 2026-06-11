@@ -60,13 +60,13 @@ There is one optional extra. The physics module builds on Box2D and is imported 
 nimble can install nim2d straight from the repository:
 
 ```
-nimble install https://github.com/beshrkayali/nim2d
+nimble install https://github.com/nim2d/nim2d
 ```
 
 That makes `import nim2d` work in any program you compile. If you would rather poke at something running first, clone the repository and start an example:
 
 ```
-git clone https://github.com/beshrkayali/nim2d
+git clone https://github.com/nim2d/nim2d
 cd nim2d
 nim c -r examples/snake.nim
 ```

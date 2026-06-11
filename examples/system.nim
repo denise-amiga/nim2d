@@ -63,10 +63,10 @@ n2d.keydown = proc(nim2d: Nim2d, sc: Key) =
     nim2d.setMousePosition(nim2d.getWidth.float / 2, nim2d.getHeight.float / 2)
     status = "warped the cursor to the center"
   of Key.b:
-    nim2d.showMessageBox("nim2d", "A simple message box from love.window.")
+    nim2d.showMessageBox("nim2d", "A simple message box from nim2d.")
     status = "showed a message box"
   of Key.u:
-    discard openURL("https://github.com/beshrkayali/nim2d")
+    discard openURL("https://github.com/nim2d/nim2d")
     status = "opened the project page in the browser"
   of Key.y:
     vsync = not vsync

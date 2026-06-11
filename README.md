@@ -1,6 +1,6 @@
 # nim2d
 
-[![Tests](https://github.com/beshrkayali/nim2d/actions/workflows/tests.yml/badge.svg)](https://github.com/beshrkayali/nim2d/actions/workflows/tests.yml)
+[![Tests](https://github.com/nim2d/nim2d/actions/workflows/tests.yml/badge.svg)](https://github.com/nim2d/nim2d/actions/workflows/tests.yml)
 
 nim2d is a 2D game framework for Nim, in the spirit of love2d. It is built on SDL3 and SDL's GPU API, licensed under zlib, and runs on macOS, Linux and Windows. It covers drawing (shapes, images, text, canvases, fragment shaders, a transform stack, sprite batches, meshes and particle systems), keyboard, mouse, gamepad and touch input, audio, a seeded random and noise module, CPU pixel buffers, the filesystem, data encoding and compression, window and system controls, background threads, and rigid-body physics through Box2D. The renderer is an SDL_GPU batch renderer. Images load through SDL3_image, text through SDL3_ttf, and sound through SDL3_mixer. Shaders are authored in GLSL and compiled ahead of time to SPIR-V and MSL, so the engine draws on both Vulkan and Metal; `newShader` also accepts Metal Shading Language source directly for Metal-only use.
 
