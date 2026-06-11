@@ -7,10 +7,10 @@
 ## seek and tell, volume, pitch, looping, and a 3D position for panning and
 ## distance.
 ##
-## Pitch and speed move together through the track's frequency ratio, the same
-## way love behaves; there is no independent time stretch. SDL_mixer keeps its
-## listener at the origin, so a movable listener is emulated by offsetting each
-## positioned source by the stored listener position.
+## Pitch and speed move together through the track's frequency ratio; there is
+## no independent time stretch. SDL_mixer keeps its listener at the origin, so
+## a movable listener is emulated by offsetting each positioned source by the
+## stored listener position.
 ##
 ## If no audio device opens (a headless or CI machine), the mixer stays off and
 ## every call here becomes a safe no-op, so a game still builds and runs.

@@ -1,16 +1,81 @@
 # Getting started
 
-You need Nim 2.0 or newer and the SDL3 libraries. On macOS that is one brew command.
+.. contents::
+
+This page takes you from a blank machine to a window with something moving in it. Three things need to be in place: Nim itself, the SDL3 libraries that nim2d draws and plays sound through, and nim2d. None of it takes long.
+
+## Installing Nim
+
+You need Nim 2.0 or newer. If you don't have it, choosenim installs and manages Nim versions and is the easiest route on macOS and Linux:
+
+```
+curl https://nim-lang.org/choosenim/init.sh -sSf | sh
+```
+
+Package managers work too, like `brew install nim` on macOS or `sudo pacman -S nim` on Arch Linux. On Windows, the [Nim website](https://nim-lang.org/install_windows.html) has an installer and a zip. Whichever way you go, check the result with `nim -v` and make sure it says 2.x.
+
+## Installing SDL3
+
+nim2d draws, reads input and plays sound through SDL3 and its three satellite libraries: SDL3_image for loading images, SDL3_ttf for fonts, and SDL3_mixer for audio. They are linked into your game when it compiles, so they have to be installed before you build anything.
+
+On macOS, Homebrew has all four:
 
 ```
 brew install sdl3 sdl3_image sdl3_ttf sdl3_mixer
 ```
 
-nim2d pulls in the `sdl3_nim` binding through nimble, and it links SDL3 at build time using settings in `config.nims`, so as long as the libraries are installed you don't have to pass anything extra to the compiler.
+On Arch Linux, all four are in the official repositories:
 
-The physics module is the one extra. It builds on Box2D (`brew install box2d`) and you import it on its own with `import nim2d/physics`, so you only need Box2D installed if you actually use it.
+```
+sudo pacman -S sdl3 sdl3_image sdl3_ttf sdl3_mixer
+```
 
-Here is the smallest program that draws something.
+On Ubuntu, SDL3 arrived in the official packages with 25.04, along with image and ttf:
+
+```
+sudo apt install libsdl3-dev libsdl3-image-dev libsdl3-ttf-dev
+```
+
+SDL3_mixer is not packaged on Ubuntu at the time of writing, so build that one from source. It lands in `/usr/local`, which is where nim2d looks on Linux by default:
+
+```
+sudo apt install build-essential git cmake ninja-build pkg-config libogg-dev libvorbis-dev
+git clone --depth 1 --branch release-3.2.4 https://github.com/libsdl-org/SDL_mixer
+cmake -S SDL_mixer -B SDL_mixer/build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build SDL_mixer/build
+sudo cmake --install SDL_mixer/build
+sudo ldconfig
+```
+
+On an older Ubuntu, or any distribution without SDL3 packages, the same recipe builds the rest of the family. Build SDL itself first, then SDL_image, SDL_ttf and SDL_mixer, cloning `https://github.com/libsdl-org/SDL` and so on at their latest release tags. Before building SDL, install your desktop's development headers (`libx11-dev`, `libxext-dev`, `libwayland-dev`, `libxkbcommon-dev`, `libegl-dev` on Ubuntu) so it builds with video support, and give SDL_image and SDL_ttf `libpng-dev`, `libjpeg-dev`, `libfreetype-dev` and `libharfbuzz-dev` so they can do their jobs.
+
+On Windows, every library ships prebuilt. Download the `-devel-...-mingw.zip` file from the releases page of each of [SDL](https://github.com/libsdl-org/SDL/releases), [SDL_image](https://github.com/libsdl-org/SDL_image/releases), [SDL_ttf](https://github.com/libsdl-org/SDL_ttf/releases) and [SDL_mixer](https://github.com/libsdl-org/SDL_mixer/releases), and merge the `x86_64-w64-mingw32` folder from each zip into one place, say `C:\sdl3`, so it has `bin`, `include` and `lib` folders. Then set the environment variable `NIM2D_SDL_PREFIX` to `C:/sdl3` and add `C:\sdl3\bin` to your `PATH` so the DLLs are found when your game runs.
+
+That environment variable works everywhere: if your libraries live somewhere unusual, point `NIM2D_SDL_PREFIX` at the prefix that holds their `include` and `lib` directories.
+
+There is one optional extra. The physics module builds on Box2D and is imported separately with `import nim2d/physics`, so you only need Box2D if you use it: `brew install box2d` on macOS, `sudo pacman -S box2d` on Arch, built from source elsewhere. The [physics page](physics.html) has the details.
+
+## Installing nim2d
+
+nimble can install nim2d straight from the repository:
+
+```
+nimble install https://github.com/beshrkayali/nim2d
+```
+
+That makes `import nim2d` work in any program you compile. If you would rather poke at something running first, clone the repository and start an example:
+
+```
+git clone https://github.com/beshrkayali/nim2d
+cd nim2d
+nim c -r examples/snake.nim
+```
+
+If a window opens and you are playing snake, everything is in place.
+
+## The first program
+
+Here is the smallest program that draws something. Put it in `hello.nim`:
 
 ```nim
 import nim2d
@@ -26,9 +91,18 @@ n2d.play()
 
 Run it with `nim c -r hello.nim`. A window opens and stays up until you close it.
 
-The shape of a nim2d program is the same as love2d. You make a window with `newNim2d`, you assign callbacks for the parts you care about, and `play` runs the loop until the window closes or you set `nim2d.running` to false. The callbacks you will use most are `load`, which runs once at the start, `update`, which runs every frame with the time since the last frame, and `draw`, which runs every frame and is where all your drawing goes.
+.. image:: assets/hello.png
+   :width: 480
+   :alt: the window the program above opens
+
+Every nim2d program has this shape. You make a window with `newNim2d`, you assign callbacks for the parts you care about, and `play` runs the loop until the window closes or you set `nim2d.running` to false. The callbacks you will use most are `load`, which runs once at the start, `update`, which runs every frame with the time since the last frame, and `draw`, which runs every frame and is where all your drawing goes.
+
+## Making it move
+
+A still circle is a start, but games move. `update` hands you `dt`, the seconds since the last frame, and whatever you accumulate from it can drive the drawing:
 
 ```nim
+import std/math
 import nim2d
 
 let n2d = newNim2d("loop", 100, 100, 640, 480, (20'u8, 22'u8, 30'u8, 255'u8))
@@ -42,11 +116,15 @@ n2d.update = proc(nim2d: Nim2d, dt: float) =
 
 n2d.draw = proc(nim2d: Nim2d) =
   nim2d.setColor(120, 200, 255)
-  nim2d.circle(320, 240, 60 + 20 * t, true)
+  nim2d.circle(320, 240, 80 + 24 * sin(t * 3), true)
 
 n2d.play()
 ```
 
-The fourth and fifth arguments to `newNim2d` are the window width and height. The sixth, when you pass it, is the background color as four bytes for red, green, blue and alpha. The window clears to that color at the start of every frame, so `draw` always starts from a clean background.
+Run it and the circle breathes. The sixth argument to `newNim2d` is the background color as four bytes for red, green, blue and alpha; the window clears to it at the start of every frame, so `draw` always starts from a clean slate.
+
+## How coordinates work
 
 Coordinates are in pixels with the origin at the top left and y pointing down. Positions and sizes are plain `float`, so you can pass numbers and the results of math without sprinkling type conversions everywhere. Colors are bytes from 0 to 255. Angles, where they show up, are in radians.
+
+From here, the [drawing page](drawing.html) walks through everything you can put on the screen, and the [input page](input.html) covers reading the keyboard, mouse and gamepads. Or just open the [examples](examples.html) and start changing numbers.

@@ -11,6 +11,8 @@ import keyboard
 import mouse
 
 proc dispatch*(nim2d: Nim2d, evt: SDL_Event) =
+  ## Route one SDL event to the matching engine callback. The `play` loop calls
+  ## this for every pending event each frame.
   let t = evt.type_field
   if t == uint32(SDL_EVENT_QUIT):
     nim2d.quit(nim2d)

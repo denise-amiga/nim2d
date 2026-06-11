@@ -524,6 +524,47 @@ proc createTextureFromPixels*(gpu: GpuContext, pixels: pointer, w, h, pitch: int
   discard SDL_SubmitGPUCommandBuffer(cmd)
   SDL_ReleaseGPUTransferBuffer(gpu.device, tb)
 
+proc downloadTexture*(gpu: GpuContext, tex: ptr SDL_GPUTexture, w, h: int32): seq[uint8] =
+  ## Read a texture's pixels back from the GPU as tightly packed RGBA8 bytes.
+  ## Waits for all submitted GPU work first, so the bytes reflect the last
+  ## completed frame. Render targets use the swapchain format, which can be
+  ## BGRA, so the channels are reordered to RGBA when needed.
+  let bytes = w.int * h.int * 4
+  result = newSeq[uint8](bytes)
+  if bytes == 0: return
+  discard SDL_WaitForGPUIdle(gpu.device)
+  var tbci = SDL_GPUTransferBufferCreateInfo(
+    usage: SDL_GPU_TRANSFERBUFFERUSAGE_DOWNLOAD, size: Uint32(bytes))
+  let tb = SDL_CreateGPUTransferBuffer(gpu.device, addr tbci)
+  if tb == nil:
+    raise newException(CatchableError,
+      "SDL_CreateGPUTransferBuffer failed: " & $SDL_GetError())
+  let cmd = SDL_AcquireGPUCommandBuffer(gpu.device)
+  let cp = SDL_BeginGPUCopyPass(cmd)
+  var region = SDL_GPUTextureRegion(
+    texture: tex, mip_level: 0, layer: 0, x: 0, y: 0, z: 0,
+    w: Uint32(w), h: Uint32(h), d: 1)
+  var dst = SDL_GPUTextureTransferInfo(
+    transfer_buffer: tb, offset: 0,
+    pixels_per_row: Uint32(w), rows_per_layer: Uint32(h))
+  SDL_DownloadFromGPUTexture(cp, addr region, addr dst)
+  SDL_EndGPUCopyPass(cp)
+  var fence = SDL_SubmitGPUCommandBufferAndAcquireFence(cmd)
+  if fence != nil:
+    discard SDL_WaitForGPUFences(gpu.device, true, addr fence, 1)
+    SDL_ReleaseGPUFence(gpu.device, fence)
+  let src = cast[ptr UncheckedArray[byte]](
+    SDL_MapGPUTransferBuffer(gpu.device, tb, false))
+  copyMem(addr result[0], addr src[0], bytes)
+  SDL_UnmapGPUTransferBuffer(gpu.device, tb)
+  SDL_ReleaseGPUTransferBuffer(gpu.device, tb)
+  if gpu.swFormat == SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM or
+     gpu.swFormat == SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM_SRGB:
+    var i = 0
+    while i < bytes:
+      swap(result[i], result[i + 2])
+      i += 4
+
 proc createRenderTarget*(gpu: GpuContext, w, h: int32): ptr SDL_GPUTexture =
   ## A texture usable both as a color target (canvas) and as a sampled texture.
   ## Must use the swapchain format so the built-in pipelines can target it.

@@ -1,5 +1,7 @@
 # Math
 
+.. contents::
+
 The math module is plain Nim, so it works the same on every platform and never touches the GPU. It gives you random numbers, noise, Bezier curves, polygon triangulation, vectors with the usual operators, and a handful of small geometry and color helpers.
 
 ## Random
@@ -34,7 +36,11 @@ let v = noise(x * 0.05, y * 0.05)          # scale the input to set the feature 
 let t = noise(x * 0.05, y * 0.05, time)    # animate by moving along the third axis
 ```
 
-Smaller multipliers on the input give larger, smoother features, and larger ones give finer detail.
+Smaller multipliers on the input give larger, smoother features, and larger ones give finer detail. The square below is Perlin noise at two scales mixed and written into an ImageData; next to it, a concave star filled by ear-clipping triangulation and a Bezier curve with its control points.
+
+.. image:: assets/noise.png
+   :width: 560
+   :alt: a Perlin noise field, a concave star and a Bezier curve
 
 ## Bezier curves
 

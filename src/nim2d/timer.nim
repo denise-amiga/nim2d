@@ -1,4 +1,4 @@
-## love.timer-style timing.
+## Frame timing and the clock.
 
 import backend/sdl
 import types
@@ -12,7 +12,9 @@ proc getDelta*(nim2d: Nim2d): float =
   nim2d.dt
 
 proc getFPS*(nim2d: Nim2d): float =
+  ## The current frames per second, from the last frame's timing.
   nim2d.fps
 
 proc sleep*(seconds: float) =
+  ## Pause the calling thread for a number of seconds.
   SDL_Delay(Uint32(seconds * 1000))

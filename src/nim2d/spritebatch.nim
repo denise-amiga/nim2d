@@ -8,22 +8,28 @@ import graphics
 import backend/renderer
 
 type SpriteBatch* = ref object
+  ## Many copies of one texture, built up with `add` and drawn in one call.
   texture*: Texture
   color*: Color
   verts: seq[Vertex]
   indices: seq[uint32]
 
 proc newSpriteBatch*(image: Texture): SpriteBatch =
+  ## A sprite batch drawing copies of `image`.
   SpriteBatch(texture: image, color: (255'u8, 255'u8, 255'u8, 255'u8))
 
 proc setColor*(batch: SpriteBatch, r, g, b: uint8, a: uint8 = 255) =
+  ## Tint the sprites added after this call.
   batch.color = (r, g, b, a)
 
 proc clear*(batch: SpriteBatch) =
+  ## Empty the batch to build it up again.
   batch.verts.setLen(0)
   batch.indices.setLen(0)
 
-proc count*(batch: SpriteBatch): int = batch.verts.len div 4
+proc count*(batch: SpriteBatch): int =
+  ## How many sprites the batch holds.
+  batch.verts.len div 4
 
 proc addRegion(batch: SpriteBatch, w, h, x, y, angle, sx, sy, ox, oy: float,
                u0, v0, u1, v1: float32) =
@@ -45,15 +51,20 @@ proc addRegion(batch: SpriteBatch, w, h, x, y, angle, sx, sy, ox, oy: float,
 
 proc add*(batch: SpriteBatch, x, y: float, angle = 0.0, sx = 1.0, sy = 1.0,
           ox = 0.0, oy = 0.0) =
+  ## Add one copy of the texture at (x, y), with the same rotation, scale and
+  ## origin arguments as drawing an image.
   batch.addRegion(batch.texture.width.float, batch.texture.height.float,
                   x, y, angle, sx, sy, ox, oy, 0, 0, 1, 1)
 
 proc add*(batch: SpriteBatch, quad: Quad, x, y: float, angle = 0.0, sx = 1.0,
           sy = 1.0, ox = 0.0, oy = 0.0) =
+  ## Add one copy of just the `quad` region of the texture, for sprite sheets.
   batch.addRegion(quad.w.float, quad.h.float, x, y, angle, sx, sy, ox, oy,
                   quad.u0, quad.v0, quad.u1, quad.v1)
 
 proc draw*(batch: SpriteBatch, nim2d: Nim2d, x = 0.0, y = 0.0) =
+  ## Draw the whole batch in one call, optionally offset by (x, y), through the
+  ## current transform.
   if batch.verts.len == 0: return
   nim2d.push()
   nim2d.translate(x, y)

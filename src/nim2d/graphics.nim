@@ -2,7 +2,7 @@
 ##
 ## SDL2_gfx, the old primitive backend, has no SDL3 successor, so every shape is
 ## turned into triangles or edges here and fed to the GPU batcher. Angles are in
-## radians, the same as love2d. Outlines are drawn as quad strips.
+## radians. Outlines are drawn as quad strips.
 ##
 ## Coordinates use Nim's default `float` for ergonomics and get converted to
 ## float32 only when building GPU vertices.
@@ -123,6 +123,8 @@ iterator arcPoints(cx, cy, rx, ry, a1, a2: float, segments: int): Vec2 =
 # --- state -----------------------------------------------------------------
 
 proc setColor*(nim2d: Nim2d, r, g, b: uint8, a: uint8 = 255) =
+  ## Set the color used by shapes and text until it is changed again. Channels
+  ## are bytes from 0 to 255, and alpha defaults to fully opaque.
   nim2d.color = (r, g, b, a)
 
 proc setColor*(nim2d: Nim2d, c: Color) =
@@ -131,6 +133,7 @@ proc setColor*(nim2d: Nim2d, c: Color) =
   nim2d.color = c
 
 proc setBackgroundColor*(nim2d: Nim2d, r, g, b: uint8, a: uint8 = 255) =
+  ## Set the color the window clears to at the start of every frame.
   nim2d.background = (r, g, b, a)
 
 proc setBackgroundColor*(nim2d: Nim2d, c: Color) =
@@ -138,9 +141,14 @@ proc setBackgroundColor*(nim2d: Nim2d, c: Color) =
   nim2d.background = c
 
 proc setBlendMode*(nim2d: Nim2d, mode: BlendMode) =
+  ## Set how drawing mixes with what is already there: `bmAlpha` (the default),
+  ## `bmAdd` for brightening glow effects, `bmMod` to darken, `bmNone` to
+  ## overwrite without blending.
   nim2d.blend = mode
 
 proc setBlendMode*(nim2d: Nim2d, mode: string) =
+  ## Set the blend mode by name: "blend" or "alpha", "add", "mod" or
+  ## "multiply". Anything else turns blending off.
   nim2d.blend = case mode
     of "blend", "alpha": bmAlpha
     of "add": bmAdd
@@ -163,15 +171,20 @@ proc origin*(nim2d: Nim2d) =
   nim2d.gpu.transform = identity()
 
 proc translate*(nim2d: Nim2d, dx, dy: float) =
+  ## Shift the coordinate system by (dx, dy). Everything drawn afterwards moves
+  ## with it.
   nim2d.gpu.transform = nim2d.gpu.transform.translate(dx, dy)
 
 proc rotate*(nim2d: Nim2d, radians: float) =
+  ## Turn the coordinate system around the current origin.
   nim2d.gpu.transform = nim2d.gpu.transform.rotate(radians)
 
 proc scale*(nim2d: Nim2d, sx, sy: float) =
+  ## Stretch the coordinate system by sx and sy.
   nim2d.gpu.transform = nim2d.gpu.transform.scale(sx, sy)
 
 proc shear*(nim2d: Nim2d, kx, ky: float) =
+  ## Slant the coordinate system by the factors kx and ky.
   nim2d.gpu.transform = nim2d.gpu.transform.shear(kx, ky)
 
 # --- scissor ---------------------------------------------------------------
@@ -188,23 +201,30 @@ proc setScissor*(nim2d: Nim2d) =
 # --- shapes ----------------------------------------------------------------
 
 proc circle*(nim2d: Nim2d, x, y, radius: float, filled = false, segments = 48) =
+  ## A circle centered at (x, y), outlined by default and solid with `filled`.
+  ## More `segments` make it rounder, fewer make it cheaper.
   var rim = newSeq[Vec2]()
   for p in arcPoints(x, y, radius, radius, 0, TAU, segments): rim.add p
   if filled: nim2d.fillFan((x, y), rim)
   else: nim2d.polyline(rim, closed = false)
 
 proc ellipse*(nim2d: Nim2d, x, y, rx, ry: float, filled = false, segments = 48) =
+  ## An ellipse centered at (x, y) with the radii rx and ry.
   var rim = newSeq[Vec2]()
   for p in arcPoints(x, y, rx, ry, 0, TAU, segments): rim.add p
   if filled: nim2d.fillFan((x, y), rim)
   else: nim2d.polyline(rim, closed = false)
 
 proc arc*(nim2d: Nim2d, x, y, radius, a1, a2: float, segments = 48) =
+  ## Part of a circle outline between the angles a1 and a2, in radians measured
+  ## clockwise from the right (y points down).
   var pts = newSeq[Vec2]()
   for p in arcPoints(x, y, radius, radius, a1, a2, segments): pts.add p
   nim2d.polyline(pts, closed = false)
 
 proc pie*(nim2d: Nim2d, x, y, radius, a1, a2: float, filled = false, segments = 48) =
+  ## A wedge from the center (x, y) between the angles a1 and a2, like a slice
+  ## of pie. Outlined by default, solid with `filled`.
   var rim = newSeq[Vec2]()
   for p in arcPoints(x, y, radius, radius, a1, a2, segments): rim.add p
   if filled:
@@ -223,6 +243,8 @@ proc roundedRectPoints(x, y, w, h, r: float, seg = 8): seq[Vec2] =
   for p in arcPoints(x + rr, y + rr, rr, rr, PI, 3 * PI / 2, seg): result.add p
 
 proc rectangle*(nim2d: Nim2d, x, y, w, h: float, filled = false, roundness = 0.0) =
+  ## A rectangle with its top-left corner at (x, y). A `roundness` above zero
+  ## rounds the corners by that radius.
   if roundness > 0:
     let pts = roundedRectPoints(x, y, w, h, roundness)
     if filled: nim2d.fillConvexFan(pts)
@@ -233,11 +255,16 @@ proc rectangle*(nim2d: Nim2d, x, y, w, h: float, filled = false, roundness = 0.0
     else: nim2d.polyline(pts, closed = true)
 
 proc triangle*(nim2d: Nim2d, x1, y1, x2, y2, x3, y3: float, filled = false) =
+  ## A triangle through three points.
   let pts = @[(x1, y1), (x2, y2), (x3, y3)]
   if filled: nim2d.fillConvexFan(pts)
   else: nim2d.polyline(pts, closed = true)
 
 proc polygon*(nim2d: Nim2d, xs, ys: openArray[float], filled = false) =
+  ## A closed polygon through the points given as parallel x and y arrays. The
+  ## fill works for concave outlines too, so a star or an arrow fills
+  ## correctly. Raises ValueError when the arrays differ in length or hold
+  ## fewer than 3 points.
   if xs.len != ys.len:
     raise newException(ValueError, "polygon: x and y must have equal length")
   if xs.len < 3:
@@ -248,9 +275,12 @@ proc polygon*(nim2d: Nim2d, xs, ys: openArray[float], filled = false) =
   else: nim2d.polyline(pts, closed = true)
 
 proc line*(nim2d: Nim2d, points: openArray[Vec2], width = 1.0) =
+  ## A polyline through the points. Lines wider than a couple of pixels get
+  ## round joins where segments meet.
   nim2d.polyline(points, closed = false, width)
 
 proc points*(nim2d: Nim2d, pts: openArray[Vec2], size = 1.0) =
+  ## A square dot of the given size at each point.
   let c = norm(nim2d.color)
   let h = size / 2
   for p in pts:

@@ -6,8 +6,11 @@
 
 import types
 import backend/renderer
+import imagedata
 
 proc newCanvas*(nim2d: Nim2d, width, height: int32): Canvas =
+  ## An off-screen render target. Point drawing at it with `setCanvas`, then
+  ## draw it like any image.
   result = Canvas(
     tex: nim2d.gpu.createRenderTarget(width, height),
     width: width, height: height,
@@ -18,4 +21,15 @@ proc newCanvas*(nim2d: Nim2d, width, height: int32): Canvas =
     result.depth = nim2d.gpu.createDepthTarget(width, height)
 
 proc newCanvas*(nim2d: Nim2d): Canvas =
+  ## A canvas the size of the window.
   newCanvas(nim2d, nim2d.width, nim2d.height)
+
+proc newImageData*(nim2d: Nim2d, canvas: Canvas): ImageData =
+  ## Read a canvas's pixels back from the GPU into a new ImageData, which you
+  ## can inspect with `getPixel` or save to a PNG with `encode`. The renderer
+  ## defers drawing until the end of the frame, so the pixels are what the
+  ## canvas held after the last completed frame. Draw to the canvas in one
+  ## frame and read it back in the next, in `update`, not in the middle of
+  ## the `draw` that fills it.
+  result = newImageData(canvas.width, canvas.height)
+  result.pixels = nim2d.gpu.downloadTexture(canvas.tex, canvas.width, canvas.height)

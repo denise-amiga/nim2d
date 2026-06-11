@@ -108,4 +108,5 @@ proc startTextInput*(nim2d: Nim2d) =
   discard SDL_StartTextInput(nim2d.gpu.window)
 
 proc stopTextInput*(nim2d: Nim2d) =
+  ## Stop receiving `textinput` events.
   discard SDL_StopTextInput(nim2d.gpu.window)

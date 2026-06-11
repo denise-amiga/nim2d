@@ -1,21 +1,24 @@
 # nim2d
 
-nim2d is a small 2D game engine for Nim, loosely modeled on love2d. You open a window, set a few callbacks for loading, updating and drawing, and call `play`. This is the documentation for what it can do right now.
+nim2d is a small 2D game engine for Nim, in the spirit of love2d. You open a window, set a few callbacks for loading, updating and drawing, and call `play`. The rest is a box of parts: shapes, images, text, canvases, shaders, input, sound, physics, and the plain-Nim modules for random numbers, noise, files and data.
 
-These docs come in two parts. The guides are hand-written and walk through how things work, and the API reference is generated from the source so it always matches the code.
+.. image:: assets/hero.png
+   :width: 740
+   :alt: shapes, a bezier curve and text rendered by nim2d
 
-- [Getting started](getting-started.html)
-- [Drawing](drawing.html)
-- [Input and timing](input.html)
-- [Math](math.html)
-- [Data](data.html)
-- [Files](filesystem.html)
-- [Audio](audio.html)
-- [System](system.html)
-- [Physics](physics.html)
-- [Parity](parity.html), how close nim2d is to love2d, module by module
-- [Examples](examples.html)
+It runs on macOS, Linux and Windows through SDL3 and its GPU API, drawing on Metal or Vulkan depending on the platform. Every screenshot in these docs was rendered by nim2d itself, by a small tool that draws each scene into a canvas, reads the pixels back and saves a PNG.
+
+The docs come in two parts. The guides are hand-written and walk through how things work, and the API reference is generated from the source so it always matches the code.
+
+- [Getting started](getting-started.html), from `brew install` to a window with a circle in it
+- [Drawing](drawing.html), shapes, images, text, particles, canvases and shaders
+- [Input and timing](input.html), keyboard, mouse, gamepads and the clock
+- [Math](math.html), seeded random, noise, Bezier curves and vectors
+- [Data](data.html), encoding, hashing, compression and packing
+- [Files](filesystem.html), the save directory and reading what you ship
+- [Audio](audio.html), loading and playing sounds
+- [System](system.html), clipboard, battery and other platform bits
+- [Physics](physics.html), rigid bodies on Box2D
+- [Examples](examples.html), the runnable demos in the repository
 - [API reference](api/nim2d.html), the main module, with links to every other module under it
 - [Symbol index](api/theindex.html), every type and proc in one list
-
-nim2d is pre-alpha. It runs on macOS, Linux and Windows through SDL3 and its GPU API, drawing on Metal or Vulkan depending on the platform. Shapes, images, text, canvases, a transform stack, shaders and input all work, and so do sound, physics, threads and the non-graphics pieces like a seeded random generator, noise, file saving and data encoding. See the parity page for how close it is to love2d and what is still missing.

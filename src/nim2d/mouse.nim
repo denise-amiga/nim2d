@@ -20,8 +20,13 @@ proc mousePosition*(): Vec2 =
   discard SDL_GetMouseState(addr x, addr y)
   (x.float, y.float)
 
-proc mouseX*(): float = mousePosition().x
-proc mouseY*(): float = mousePosition().y
+proc mouseX*(): float =
+  ## The cursor's x position relative to the window.
+  mousePosition().x
+
+proc mouseY*(): float =
+  ## The cursor's y position relative to the window.
+  mousePosition().y
 
 proc isMouseDown*(button: int = 1): bool =
   ## Whether a mouse button is held. 1 is left, 2 is middle, 3 is right.

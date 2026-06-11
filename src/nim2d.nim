@@ -35,40 +35,101 @@ export sdl  # the raw SDL bindings, as an escape hatch for advanced use
 
 # --- callback setters ------------------------------------------------------
 
-proc `load=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) = n2d.load = p
-proc `update=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, dt: float)) = n2d.update = p
-proc `draw=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) = n2d.draw = p
-proc `quit=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) = n2d.quit = p
-proc `keydown=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, key: Key)) = n2d.keydown = p
-proc `keyup=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, key: Key)) = n2d.keyup = p
-proc `mousemove=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, x, y, dx, dy: float)) = n2d.mousemove = p
-proc `mousepressed=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, x, y: float, button: MouseButton, clicks: uint8)) = n2d.mousepressed = p
-proc `mousereleased=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, x, y: float, button: MouseButton, clicks: uint8)) = n2d.mousereleased = p
-proc `mousewheel=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, x, y: float)) = n2d.mousewheel = p
-proc `textinput=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, text: string)) = n2d.textinput = p
-proc `gamepadpressed=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: GamepadId, button: GamepadButton)) = n2d.gamepadpressed = p
-proc `gamepadreleased=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: GamepadId, button: GamepadButton)) = n2d.gamepadreleased = p
-proc `gamepadaxis=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: GamepadId, axis: GamepadAxis, value: float)) = n2d.gamepadaxis = p
-proc `touchpressed=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: int64, x, y, pressure: float)) = n2d.touchpressed = p
-proc `touchmoved=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: int64, x, y, pressure: float)) = n2d.touchmoved = p
-proc `touchreleased=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: int64, x, y, pressure: float)) = n2d.touchreleased = p
+proc `load=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
+  ## Set the callback that runs once when `play` starts, before the first frame.
+  n2d.load = p
+proc `update=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, dt: float)) =
+  ## Set the callback that runs every frame with the seconds since the last one.
+  n2d.update = p
+proc `draw=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
+  ## Set the callback that draws each frame. All drawing goes here.
+  n2d.draw = p
+proc `quit=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
+  ## Set the callback that runs when the program is shutting down.
+  n2d.quit = p
+proc `keydown=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, key: Key)) =
+  ## Set the callback for a key going down.
+  n2d.keydown = p
+proc `keyup=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, key: Key)) =
+  ## Set the callback for a key coming back up.
+  n2d.keyup = p
+proc `mousemove=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, x, y, dx, dy: float)) =
+  ## Set the callback for mouse motion: the position and the distance moved.
+  n2d.mousemove = p
+proc `mousepressed=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, x, y: float, button: MouseButton, clicks: uint8)) =
+  ## Set the callback for a mouse button press: position, button, click count.
+  n2d.mousepressed = p
+proc `mousereleased=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, x, y: float, button: MouseButton, clicks: uint8)) =
+  ## Set the callback for a mouse button release.
+  n2d.mousereleased = p
+proc `mousewheel=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, x, y: float)) =
+  ## Set the callback for the scroll wheel; y is the usual vertical scroll.
+  n2d.mousewheel = p
+proc `textinput=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, text: string)) =
+  ## Set the callback for typed text, delivered as UTF-8 once `startTextInput`
+  ## has turned text input on.
+  n2d.textinput = p
+proc `gamepadpressed=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: GamepadId, button: GamepadButton)) =
+  ## Set the callback for a controller button press.
+  n2d.gamepadpressed = p
+proc `gamepadreleased=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: GamepadId, button: GamepadButton)) =
+  ## Set the callback for a controller button release.
+  n2d.gamepadreleased = p
+proc `gamepadaxis=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: GamepadId, axis: GamepadAxis, value: float)) =
+  ## Set the callback for stick and trigger motion. Sticks run -1 to 1,
+  ## triggers 0 to 1.
+  n2d.gamepadaxis = p
+proc `touchpressed=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: int64, x, y, pressure: float)) =
+  ## Set the callback for a finger touching the screen, with x and y in pixels.
+  n2d.touchpressed = p
+proc `touchmoved=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: int64, x, y, pressure: float)) =
+  ## Set the callback for a finger moving while touching.
+  n2d.touchmoved = p
+proc `touchreleased=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, id: int64, x, y, pressure: float)) =
+  ## Set the callback for a finger lifting off.
+  n2d.touchreleased = p
 
-proc `window_shown=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) = n2d.window_shown = p
-proc `window_hidden=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) = n2d.window_hidden = p
-proc `window_moved=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) = n2d.window_moved = p
-proc `window_resized=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) = n2d.window_resized = p
-proc `window_minimized=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) = n2d.window_minimized = p
-proc `window_maximized=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) = n2d.window_maximized = p
-proc `window_restored=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) = n2d.window_restored = p
-proc `window_enter=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) = n2d.window_enter = p
-proc `window_leave=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) = n2d.window_leave = p
-proc `window_focus_gained=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) = n2d.window_focus_gained = p
-proc `window_focus_lost=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) = n2d.window_focus_lost = p
-proc `window_close=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) = n2d.window_close = p
+proc `window_shown=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
+  ## Set the callback for the window becoming visible.
+  n2d.window_shown = p
+proc `window_hidden=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
+  ## Set the callback for the window being hidden.
+  n2d.window_hidden = p
+proc `window_moved=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
+  ## Set the callback for the window being moved.
+  n2d.window_moved = p
+proc `window_resized=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
+  ## Set the callback for the window being resized.
+  n2d.window_resized = p
+proc `window_minimized=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
+  ## Set the callback for the window being minimized.
+  n2d.window_minimized = p
+proc `window_maximized=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
+  ## Set the callback for the window being maximized.
+  n2d.window_maximized = p
+proc `window_restored=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
+  ## Set the callback for the window being restored from minimized or maximized.
+  n2d.window_restored = p
+proc `window_enter=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
+  ## Set the callback for the mouse entering the window.
+  n2d.window_enter = p
+proc `window_leave=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
+  ## Set the callback for the mouse leaving the window.
+  n2d.window_leave = p
+proc `window_focus_gained=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
+  ## Set the callback for the window gaining keyboard focus.
+  n2d.window_focus_gained = p
+proc `window_focus_lost=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
+  ## Set the callback for the window losing keyboard focus.
+  n2d.window_focus_lost = p
+proc `window_close=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
+  ## Set the callback for the window being asked to close.
+  n2d.window_close = p
 
 # --- render-target / state -------------------------------------------------
 
 proc setFont*(nim2d: Nim2d, font: Font) =
+  ## Set the font `print` draws with.
   nim2d.font = font
 
 proc setCanvas*(nim2d: Nim2d) =
@@ -85,6 +146,7 @@ proc clear*(nim2d: Nim2d, r, g, b: uint8, a: uint8 = 255) =
   nim2d.gpu.clearTarget(p.target, p.w, p.h, (r, g, b, a), p.depth)
 
 proc clear*(nim2d: Nim2d) =
+  ## Clear the current render target to the background color.
   nim2d.clear(nim2d.background.r, nim2d.background.g, nim2d.background.b)
 
 # --- scoped state ----------------------------------------------------------
@@ -116,11 +178,12 @@ template withCanvas*(nim2d: Nim2d, canvas: Canvas, body: untyped) =
   body
   nim2d.setCanvas()
 
-template transformed*(nim2d: Nim2d, move: Vec2 = (0.0, 0.0),
-                      angle = 0.0, zoom = 1.0, body: untyped) =
+template transformed*(nim2d: Nim2d, move: Vec2, angle: float, zoom: float,
+                      body: untyped) =
   ## Run `body` inside a pushed transform, translated by `move`, turned by
-  ## `angle` radians and scaled uniformly by `zoom`, then pop back. Any argument
-  ## can be left out, so `transformed(move = vec2(x, y)): ...` is enough.
+  ## `angle` radians and scaled uniformly by `zoom`, then pop back. The later
+  ## arguments can be left off, so `transformed(move = vec2(x, y)): ...` is
+  ## enough when there is no rotation or scaling.
   nim2d.push()
   nim2d.translate(move.x, move.y)
   nim2d.rotate(angle)
@@ -128,10 +191,23 @@ template transformed*(nim2d: Nim2d, move: Vec2 = (0.0, 0.0),
   body
   nim2d.pop()
 
+template transformed*(nim2d: Nim2d, move: Vec2, angle: float, body: untyped) =
+  ## `transformed` without scaling.
+  transformed(nim2d, move, angle, 1.0, body)
+
+template transformed*(nim2d: Nim2d, move: Vec2, body: untyped) =
+  ## `transformed` with a translation only.
+  transformed(nim2d, move, 0.0, 1.0, body)
+
 # --- lifecycle -------------------------------------------------------------
 
 proc newNim2d*(title: string, x, y, width, height: cint,
                background: Color, highDpi = false, aa: int32 = 1, stencil = false): Nim2d =
+  ## Open a window and set up the engine. (x, y) is the window position and
+  ## `background` the color it clears to each frame. `highDpi` asks for a
+  ## backing buffer at the display's real pixel resolution, `aa = 2` renders
+  ## each frame at twice the size and scales it down for anti-aliasing, and
+  ## `stencil` builds the stencil machinery that `stencil` masking needs.
   if not SDL_Init(SDL_InitFlags(SDL_INIT_VIDEO or SDL_INIT_GAMEPAD)):
     raise newException(CatchableError, "SDL_Init failed: " & $SDL_GetError())
 
@@ -178,9 +254,13 @@ proc newNim2d*(title: string, x, y, width, height: cint,
   result.initAudio()
 
 proc newNim2d*(title: string, x, y, width, height: cint): Nim2d =
+  ## Open a window with the default sky-blue background.
   newNim2d(title, x, y, width, height, (89'u8, 157'u8, 220'u8, 255'u8))
 
 proc play*(nim2d: Nim2d) =
+  ## Run the main loop: dispatch events, call `update` and `draw` every frame,
+  ## and keep going until the window closes or `running` is set to false. Tears
+  ## down audio, the GPU and the window on the way out.
   nim2d.load(nim2d)
   nim2d.lastCounter = SDL_GetPerformanceCounter()
   var evt: SDL_Event

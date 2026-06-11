@@ -24,8 +24,7 @@ type
     hfMD5, hfSHA1, hfSHA256, hfSHA512
 
   CompressFormat* = enum
-    ## Compressed container formats, matching love's "zlib", "gzip" and
-    ## "deflate".
+    ## The compressed container formats: zlib, gzip and raw deflate.
     compZlib, compGzip, compDeflate
 
 # --- byte / string helpers -------------------------------------------------

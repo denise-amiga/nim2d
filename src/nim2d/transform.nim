@@ -7,16 +7,18 @@
 ##
 ## nim2d bakes transforms into vertices on the CPU, since the renderer's only GPU
 ## uniform is the orthographic projection, so this is what shape and image
-## drawing use to place geometry. The push/pop transform stack from love2d
-## (graphics.push, translate, rotate, scale) builds on these same operations.
+## drawing use to place geometry. The drawing transform stack (push, pop,
+## translate, rotate, scale) builds on these same operations.
 
 import std/math
 
 type
   Transform* = object
+    ## A 2D affine transform as the six significant components of a 3x3 matrix.
     a*, b*, c*, d*, e*, f*: float
 
 func identity*(): Transform =
+  ## The transform that maps every point to itself.
   Transform(a: 1, b: 0, c: 0, d: 1, e: 0, f: 0)
 
 func `*`*(p, q: Transform): Transform =
@@ -31,17 +33,21 @@ func `*`*(p, q: Transform): Transform =
   )
 
 func translate*(t: Transform, tx, ty: float): Transform =
+  ## The transform followed by a translation.
   t * Transform(a: 1, b: 0, c: 0, d: 1, e: tx, f: ty)
 
 func rotate*(t: Transform, radians: float): Transform =
+  ## The transform followed by a rotation.
   let cs = cos(radians)
   let sn = sin(radians)
   t * Transform(a: cs, b: sn, c: -sn, d: cs, e: 0, f: 0)
 
 func scale*(t: Transform, sx, sy: float): Transform =
+  ## The transform followed by a scale.
   t * Transform(a: sx, b: 0, c: 0, d: sy, e: 0, f: 0)
 
 func shear*(t: Transform, kx, ky: float): Transform =
+  ## The transform followed by a shear.
   t * Transform(a: 1, b: ky, c: kx, d: 1, e: 0, f: 0)
 
 func apply*(t: Transform, x, y: float): (float, float) =

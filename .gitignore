@@ -11,6 +11,9 @@ tests/physics_smoke
 # Generated documentation (regenerate with `make docs`)
 docs/html/
 
+# Compiled tool binaries
+tools/docshots
+
 # Compiled example binaries (keep sources + assets)
 examples/*
 !examples/*.nim

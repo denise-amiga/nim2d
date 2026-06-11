@@ -1,10 +1,13 @@
 # Physics
 
-Rigid-body physics runs on Box2D. It is a separate dependency, so you install Box2D and import the module on its own, since not every program wants it.
+Rigid-body physics runs on Box2D 3. It is a separate dependency, so you install Box2D and import the module on its own, since not every program wants it. Homebrew and the Arch repositories carry it:
 
-```sh
-brew install box2d
 ```
+brew install box2d        # macOS
+sudo pacman -S box2d      # Arch Linux
+```
+
+Elsewhere, build it from source; it is a small cmake project (`git clone https://github.com/erincatto/box2d`, configure with `-DBOX2D_SAMPLES=OFF -DBOX2D_UNIT_TESTS=OFF`, build and install). The distribution packages named libbox2d are usually the 2.4 series, which is a different API and will not work.
 
 ```nim
 import nim2d
@@ -12,6 +15,10 @@ import nim2d/physics
 ```
 
 You make a world with some gravity, add bodies, give them shapes, and step the world each frame. Box2D is happiest in small units like meters, so the usual approach is to simulate in meters and multiply by a scale when you draw, rather than feeding pixel-sized numbers to the solver.
+
+.. image:: assets/physics.png
+   :width: 560
+   :alt: boxes and balls dropped onto a floor, settled into a pile
 
 ```nim
 let world = newWorld(0.0, 10.0)        # gravity pulls down, since positive y is down

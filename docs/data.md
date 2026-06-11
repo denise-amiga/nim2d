@@ -1,5 +1,7 @@
 # Data
 
+.. contents::
+
 The data module is encoding, hashing, compression and byte packing. None of it touches the screen, so you can use it anywhere.
 
 ## Base64 and hex

@@ -21,6 +21,8 @@ proc ensureTtf() =
     ttfReady = true
 
 proc newFont*(filename: string, size: cint): Font =
+  ## Open a TrueType font at the given pixel size. Raises IOError when the
+  ## file cannot be opened.
   ensureTtf()
   let f = TTF_OpenFont(filename.cstring, size.cfloat)
   if f == nil:
@@ -52,13 +54,21 @@ proc newImageFont*(nim2d: Nim2d, filename, glyphs: string, spacing: int32 = 1): 
   ## A bitmap font loaded from an image file. See the other overload.
   nim2d.newImageFont(newImageData(filename), glyphs, spacing)
 
-proc getAscent*(font: Font): int = TTF_GetFontAscent(cast[ptr TTF_Font](font.font)).int
-proc getDescent*(font: Font): int = TTF_GetFontDescent(cast[ptr TTF_Font](font.font)).int
+proc getAscent*(font: Font): int =
+  ## How far the font reaches above the baseline, in pixels.
+  TTF_GetFontAscent(cast[ptr TTF_Font](font.font)).int
+
+proc getDescent*(font: Font): int =
+  ## How far the font reaches below the baseline, as a negative pixel count.
+  TTF_GetFontDescent(cast[ptr TTF_Font](font.font)).int
+
 proc getHeight*(font: Font): int =
+  ## The font's line height in pixels.
   if font.img != nil: return font.imgH.int
   TTF_GetFontHeight(cast[ptr TTF_Font](font.font)).int
 
 proc getSize*(font: Font, text: string): tuple[w, h: int32] =
+  ## The width and height in pixels that `text` would take when printed.
   if font.img != nil:
     var w = 0'i32
     for c in text:

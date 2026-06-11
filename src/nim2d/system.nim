@@ -1,4 +1,4 @@
-## Small platform queries and actions (love.system).
+## Small platform queries and actions.
 ##
 ## The OS name and processor count, clipboard read and write, opening a URL in
 ## the browser, and battery and power info. These are thin wrappers over SDL3.

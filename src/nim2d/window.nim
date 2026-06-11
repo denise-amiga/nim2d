@@ -1,15 +1,24 @@
-## Window queries and control (love.window).
+## Window queries and control.
 
 import backend/sdl
 import types
 import imagedata
 
 proc setTitle*(nim2d: Nim2d, title: string) =
+  ## Set the window's title.
   discard SDL_SetWindowTitle(nim2d.gpu.window, title.cstring)
 
-proc getWidth*(nim2d: Nim2d): int32 = nim2d.width
-proc getHeight*(nim2d: Nim2d): int32 = nim2d.height
-proc getSize*(nim2d: Nim2d): tuple[w, h: int32] = (nim2d.width, nim2d.height)
+proc getWidth*(nim2d: Nim2d): int32 =
+  ## The width of the drawable area in pixels.
+  nim2d.width
+
+proc getHeight*(nim2d: Nim2d): int32 =
+  ## The height of the drawable area in pixels.
+  nim2d.height
+
+proc getSize*(nim2d: Nim2d): tuple[w, h: int32] =
+  ## The size of the drawable area in pixels.
+  (nim2d.width, nim2d.height)
 
 proc setSize*(nim2d: Nim2d, width, height: int32) =
   ## Resize the window, and the size the engine draws with.

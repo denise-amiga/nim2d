@@ -16,12 +16,17 @@ import backend/box2d
 
 type
   BodyType* = enum
+    ## Static bodies never move (floors, walls), dynamic ones move and collide,
+    ## kinematic ones move only by the velocity you set.
     btStatic, btDynamic, btKinematic
 
   World* = ref object
+    ## A physics world holding bodies and joints, stepped with `update`.
     id: b2WorldId
 
   Body* = object
+    ## One rigid body in a world. Give it shapes with `addBox` and `addCircle`,
+    ## and read it back with `position`, `angle` and `velocity`.
     id: b2BodyId
 
 proc newWorld*(gravityX = 0.0, gravityY = 9.81): World =
@@ -119,6 +124,8 @@ proc userData*(b: Body): int =
 # --- joints -----------------------------------------------------------------
 
 type Joint* = object
+  ## A constraint tying two bodies together, made by the joint constructors on
+  ## a world.
   id: b2JointId
 
 proc destroy*(j: Joint) =
@@ -221,6 +228,7 @@ proc setMotorSpeed*(j: Joint, speed: float) =
 # --- raycasts and queries ---------------------------------------------------
 
 type RayHit* = object
+  ## What `raycast` reports about the closest body along the ray.
   hit*: bool                  ## whether the ray struck anything
   body*: Body                 ## the body it struck (only when `hit`)
   x*, y*: float               ## the point of impact
@@ -252,6 +260,7 @@ proc queryBox*(w: World, x, y, width, height: float): seq[Body] =
 # --- contact events ---------------------------------------------------------
 
 type Contact* = object
+  ## A pair of bodies that started or stopped touching during a step.
   a*, b*: Body
 
 proc beginContacts*(w: World): seq[Contact] =

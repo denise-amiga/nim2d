@@ -2,7 +2,7 @@
 ##
 ## This is pure Nim with no SDL or renderer dependency. It carries a seeded
 ## generator you can keep alongside the global one, normally distributed random,
-## value/Perlin/simplex noise in the 0-to-1 range love uses, Bezier curves,
+## value/Perlin/simplex noise mapped to the 0-to-1 range, Bezier curves,
 ## ear-clipping polygon triangulation, and helpers like distance, angle, lerp
 ## and gamma to linear color conversion. The triangulation is what lets the
 ## shape drawing fill concave polygons.
@@ -27,19 +27,53 @@ func vec2*(x, y: float): Vec2 =
   ## A 2D vector.
   (x, y)
 
-func `+`*(a, b: Vec2): Vec2 = (a.x + b.x, a.y + b.y)
-func `-`*(a, b: Vec2): Vec2 = (a.x - b.x, a.y - b.y)
-func `-`*(a: Vec2): Vec2 = (-a.x, -a.y)
-func `*`*(a: Vec2, s: float): Vec2 = (a.x * s, a.y * s)
-func `*`*(s: float, a: Vec2): Vec2 = (a.x * s, a.y * s)
-func `/`*(a: Vec2, s: float): Vec2 = (a.x / s, a.y / s)
-proc `+=`*(a: var Vec2, b: Vec2) = a = (a.x + b.x, a.y + b.y)
-proc `-=`*(a: var Vec2, b: Vec2) = a = (a.x - b.x, a.y - b.y)
-proc `*=`*(a: var Vec2, s: float) = a = (a.x * s, a.y * s)
+func `+`*(a, b: Vec2): Vec2 =
+  ## Vector addition.
+  (a.x + b.x, a.y + b.y)
 
-func dot*(a, b: Vec2): float = a.x * b.x + a.y * b.y
-func lengthSq*(a: Vec2): float = a.x * a.x + a.y * a.y
-func length*(a: Vec2): float = sqrt(a.x * a.x + a.y * a.y)
+func `-`*(a, b: Vec2): Vec2 =
+  ## Vector subtraction.
+  (a.x - b.x, a.y - b.y)
+
+func `-`*(a: Vec2): Vec2 =
+  ## The vector pointing the opposite way.
+  (-a.x, -a.y)
+
+func `*`*(a: Vec2, s: float): Vec2 =
+  ## A vector scaled by a number.
+  (a.x * s, a.y * s)
+
+func `*`*(s: float, a: Vec2): Vec2 =
+  ## A vector scaled by a number.
+  (a.x * s, a.y * s)
+
+func `/`*(a: Vec2, s: float): Vec2 =
+  ## A vector divided by a number.
+  (a.x / s, a.y / s)
+
+proc `+=`*(a: var Vec2, b: Vec2) =
+  ## Add a vector in place.
+  a = (a.x + b.x, a.y + b.y)
+
+proc `-=`*(a: var Vec2, b: Vec2) =
+  ## Subtract a vector in place.
+  a = (a.x - b.x, a.y - b.y)
+
+proc `*=`*(a: var Vec2, s: float) =
+  ## Scale a vector in place.
+  a = (a.x * s, a.y * s)
+
+func dot*(a, b: Vec2): float =
+  ## The dot product.
+  a.x * b.x + a.y * b.y
+
+func lengthSq*(a: Vec2): float =
+  ## The squared length, cheaper than `length` for comparisons.
+  a.x * a.x + a.y * a.y
+
+func length*(a: Vec2): float =
+  ## The vector's length.
+  sqrt(a.x * a.x + a.y * a.y)
 
 func normalized*(a: Vec2): Vec2 =
   ## The unit vector pointing the same way as a, or (0, 0) if a has no length.

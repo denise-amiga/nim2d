@@ -64,6 +64,10 @@ proc setWrap*(t: Texture, wrap: Wrap) =
 # --- images ----------------------------------------------------------------
 
 proc newImage*(nim2d: Nim2d, filename: string, mipmaps = false): Image =
+  ## Load an image file into a drawable GPU texture. PNG, JPEG and the other
+  ## formats SDL_image reads all work. `mipmaps` builds a mipmap chain, which
+  ## stops the texture shimmering when drawn much smaller than its native
+  ## size. Raises IOError when the file cannot be loaded.
   var surf = IMG_Load(filename.cstring)
   if surf == nil:
     raise newException(IOError, "could not load image '" & filename & "': " & $SDL_GetError())
@@ -79,16 +83,29 @@ proc newImage*(nim2d: Nim2d, filename: string, mipmaps = false): Image =
   SDL_DestroySurface(surf)
 
 proc setColorMod*(t: Texture, r, g, b: uint8) =
+  ## Tint the texture: its colors are multiplied by these channels when drawn.
   t.tint = (r, g, b, t.tint.a)
 
 proc setAlphaMod*(t: Texture, a: uint8) =
+  ## Fade the texture: 255 is fully opaque, 0 invisible.
   t.tint = (t.tint.r, t.tint.g, t.tint.b, a)
 
-proc getWidth*(t: Texture): int32 = t.width
-proc getHeight*(t: Texture): int32 = t.height
-proc getDimensions*(t: Texture): tuple[w, h: int32] = (t.width, t.height)
+proc getWidth*(t: Texture): int32 =
+  ## The texture's width in pixels.
+  t.width
+
+proc getHeight*(t: Texture): int32 =
+  ## The texture's height in pixels.
+  t.height
+
+proc getDimensions*(t: Texture): tuple[w, h: int32] =
+  ## The texture's width and height in pixels.
+  (t.width, t.height)
 
 proc destroy*(nim2d: Nim2d, t: Texture) =
+  ## Free the GPU texture. The object is unusable afterwards; this exists for
+  ## releasing memory early, since textures otherwise live until the engine
+  ## shuts down.
   if t.tex != nil:
     SDL_ReleaseGPUTexture(nim2d.gpu.device, t.tex)
     t.tex = nil

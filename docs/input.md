@@ -1,5 +1,7 @@
 # Input and timing
 
+.. contents::
+
 Input arrives through callbacks you assign on the engine, the same way as `draw` and `update`.
 
 ## Keyboard

@@ -10,8 +10,13 @@ import transform
 
 type
   Color* = tuple[r, g, b, a: uint8]
+    ## A color as four bytes from 0 to 255. The color module adds named
+    ## constants and the `rgb`, `gray` and hex constructors.
 
   Vec2* = tuple[x, y: float]
+    ## The (x, y) float pair used for positions throughout nim2d. The math
+    ## module gives it the usual vector operators, and because it is a plain
+    ## tuple they work on bare literals like `(10.0, 20.0)` too.
 
   Vertex* = object
     ## One batched vertex: pixel-space position, texcoords, normalized color.
@@ -20,6 +25,9 @@ type
     r*, g*, b*, a*: float32
 
   BlendMode* = enum
+    ## How drawing mixes with what is already on the target: no blending,
+    ## ordinary alpha blending, additive (brightens, good for glow), or
+    ## multiplicative (darkens).
     bmNone, bmAlpha, bmAdd, bmMod
 
   Key* {.pure.} = enum
@@ -63,11 +71,13 @@ type
     leftX, leftY, rightX, rightY, leftTrigger, rightTrigger
 
   PipelineKind* = enum
+    ## Which built-in pipeline a draw uses: plain vertex colors or a texture.
     pkColored, pkTextured
 
   # --- Drawables -----------------------------------------------------------
 
   Drawable* = ref object of RootObj
+    ## The base of everything that can be drawn to the screen.
 
   Filter* = enum
     ## Texture sampling: smooth (the default) or sharp, for pixel art.
@@ -77,6 +87,8 @@ type
     wrapClamp, wrapRepeat, wrapMirror
 
   Texture* = ref object of Drawable
+    ## A GPU texture with its size and sampling state. Images and canvases are
+    ## both textures, which is why they draw the same way.
     tex*: ptr SDL_GPUTexture
     width*: int32
     height*: int32
@@ -85,6 +97,7 @@ type
     wrap*: Wrap           ## clamp by default
 
   Image* = ref object of Texture
+    ## A texture loaded from a file or uploaded from an ImageData.
 
   Canvas* = ref object of Texture
     ## A render target (GPU texture created with COLOR_TARGET usage).
@@ -96,6 +109,8 @@ type
     w*, h*: float32
 
   Font* = ref object
+    ## A font for `print`: either a TrueType font opened through SDL_ttf, or a
+    ## bitmap font built from a glyph sheet by `newImageFont`.
     engine*: pointer      ## TTF_TextEngine (GPU text engine)
     font*: pointer        ## TTF_Font (nil for a bitmap/image font)
     size*: cint
@@ -113,6 +128,7 @@ type
     hasUniform*: bool
 
   Scissor* = object
+    ## A clip rectangle in render-target pixels, off when `on` is false.
     on*: bool
     x*, y*, w*, h*: int32
 
@@ -152,6 +168,9 @@ type
     cmds*: seq[DrawCmd]
 
   GpuContext* = ref object
+    ## The renderer's state: the GPU device, pipelines, samplers, the geometry
+    ## accumulated for the current frame, and the transform stack. Owned by the
+    ## engine; games normally never touch it directly.
     device*: ptr SDL_GPUDevice
     window*: ptr SDL_Window
     swFormat*: SDL_GPUTextureFormat   ## swapchain format; render targets must match it
@@ -201,6 +220,9 @@ type
   # --- Engine --------------------------------------------------------------
 
   Nim2d* = ref object
+    ## The engine: the window, the renderer, the current draw state, timing,
+    ## and the callbacks the main loop dispatches to. Make one with `newNim2d`,
+    ## assign the callbacks you care about, and hand it to `play`.
     width*: int32
     height*: int32
     gpu*: GpuContext

@@ -15,6 +15,9 @@ type
     x, y, vx, vy, life, maxLife, rot, spin: float
 
   ParticleSystem* = ref object
+    ## An emitter that spawns short-lived particles and animates them. Without
+    ## a texture the particles are colored squares; with one they are textured
+    ## quads.
     texture*: Texture
     particles: seq[Particle]
     maxParticles: int
@@ -31,6 +34,8 @@ type
     spinMin, spinMax: float
 
 proc newParticleSystem*(texture: Texture = nil, maxParticles = 2000): ParticleSystem =
+  ## A particle system, optionally drawing a texture per particle. Configure it
+  ## with the setters, `update` it every frame and `draw` it to show it.
   ParticleSystem(
     texture: texture, maxParticles: maxParticles, active: true,
     rate: 50, lifeMin: 1, lifeMax: 1, speedMin: 0, speedMax: 0,
@@ -39,21 +44,62 @@ proc newParticleSystem*(texture: Texture = nil, maxParticles = 2000): ParticleSy
     colEnd: (255'u8, 255'u8, 255'u8, 255'u8),
     spinMin: 0, spinMax: 0)
 
-proc setPosition*(ps: ParticleSystem, x, y: float) = ps.px = x; ps.py = y
-proc setEmissionRate*(ps: ParticleSystem, rate: float) = ps.rate = rate
-proc setParticleLifetime*(ps: ParticleSystem, min, max: float) = ps.lifeMin = min; ps.lifeMax = max
-proc setSpeed*(ps: ParticleSystem, min, max: float) = ps.speedMin = min; ps.speedMax = max
-proc setDirection*(ps: ParticleSystem, radians: float) = ps.direction = radians
-proc setSpread*(ps: ParticleSystem, radians: float) = ps.spread = radians
-proc setLinearAcceleration*(ps: ParticleSystem, ax, ay: float) = ps.ax = ax; ps.ay = ay
-proc setSizes*(ps: ParticleSystem, startSize, endSize: float) = ps.sizeStart = startSize; ps.sizeEnd = endSize
-proc setColors*(ps: ParticleSystem, startColor, endColor: Color) = ps.colStart = startColor; ps.colEnd = endColor
-proc setSpin*(ps: ParticleSystem, min, max: float) = ps.spinMin = min; ps.spinMax = max
+proc setPosition*(ps: ParticleSystem, x, y: float) =
+  ## Move the emitter; new particles spawn here.
+  ps.px = x; ps.py = y
 
-proc start*(ps: ParticleSystem) = ps.active = true
-proc stop*(ps: ParticleSystem) = ps.active = false
-proc isActive*(ps: ParticleSystem): bool = ps.active
-proc count*(ps: ParticleSystem): int = ps.particles.len
+proc setEmissionRate*(ps: ParticleSystem, rate: float) =
+  ## How many particles spawn per second.
+  ps.rate = rate
+
+proc setParticleLifetime*(ps: ParticleSystem, min, max: float) =
+  ## How long each particle lives, in seconds, picked from this range.
+  ps.lifeMin = min; ps.lifeMax = max
+
+proc setSpeed*(ps: ParticleSystem, min, max: float) =
+  ## The initial speed of each particle, picked from this range.
+  ps.speedMin = min; ps.speedMax = max
+
+proc setDirection*(ps: ParticleSystem, radians: float) =
+  ## The direction particles fly out in.
+  ps.direction = radians
+
+proc setSpread*(ps: ParticleSystem, radians: float) =
+  ## The angle of the cone around the direction that particles scatter into.
+  ps.spread = radians
+
+proc setLinearAcceleration*(ps: ParticleSystem, ax, ay: float) =
+  ## A constant acceleration on every particle, like gravity or wind.
+  ps.ax = ax; ps.ay = ay
+
+proc setSizes*(ps: ParticleSystem, startSize, endSize: float) =
+  ## Each particle's size fades from start to end over its life.
+  ps.sizeStart = startSize; ps.sizeEnd = endSize
+
+proc setColors*(ps: ParticleSystem, startColor, endColor: Color) =
+  ## Each particle's color fades from start to end over its life. Fading the
+  ## end alpha to 0 makes particles dissolve.
+  ps.colStart = startColor; ps.colEnd = endColor
+
+proc setSpin*(ps: ParticleSystem, min, max: float) =
+  ## How fast each particle rotates, in radians per second, from this range.
+  ps.spinMin = min; ps.spinMax = max
+
+proc start*(ps: ParticleSystem) =
+  ## Resume emitting after `stop`.
+  ps.active = true
+
+proc stop*(ps: ParticleSystem) =
+  ## Stop emitting. Particles already alive keep moving until they expire.
+  ps.active = false
+
+proc isActive*(ps: ParticleSystem): bool =
+  ## Whether the emitter is emitting.
+  ps.active
+
+proc count*(ps: ParticleSystem): int =
+  ## How many particles are alive right now.
+  ps.particles.len
 
 proc spawnOne(ps: ParticleSystem) =
   if ps.particles.len >= ps.maxParticles: return
@@ -70,6 +116,8 @@ proc emit*(ps: ParticleSystem, count: int) =
   for _ in 0 ..< count: ps.spawnOne()
 
 proc update*(ps: ParticleSystem, dt: float) =
+  ## Advance the system by `dt` seconds: spawn, move, age and retire particles.
+  ## Call every frame from the `update` callback.
   if ps.active and ps.rate > 0:
     ps.accumulator += dt * ps.rate
     while ps.accumulator >= 1:
@@ -97,6 +145,7 @@ func lerpCol(a, b: Color, t: float): Color =
    uint8(lerp(a.b.float, b.b.float, t)), uint8(lerp(a.a.float, b.a.float, t)))
 
 proc draw*(ps: ParticleSystem, nim2d: Nim2d, x = 0.0, y = 0.0) =
+  ## Draw every live particle in one batch, optionally offset by (x, y).
   if ps.particles.len == 0: return
   let textured = ps.texture != nil
   var verts = newSeqOfCap[Vertex](ps.particles.len * 4)

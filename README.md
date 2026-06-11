@@ -2,11 +2,11 @@
 
 [![Tests](https://github.com/beshrkayali/nim2d/actions/workflows/tests.yml/badge.svg)](https://github.com/beshrkayali/nim2d/actions/workflows/tests.yml)
 
-nim2d is a 2D game framework for Nim, modeled on love2d. It is built on SDL3 and SDL's GPU API, licensed under zlib, and runs on macOS, Linux and Windows. It is pre-alpha. It covers drawing (shapes, images, text, canvases, fragment shaders, a transform stack, sprite batches, meshes and particle systems), keyboard, mouse, gamepad and touch input, audio, a seeded random and noise module, CPU pixel buffers, the filesystem, data encoding and compression, window and system controls, background threads, and rigid-body physics through Box2D. The renderer is an SDL_GPU batch renderer. Images load through SDL3_image, text through SDL3_ttf, and sound through SDL3_mixer. The built-in shaders are written in GLSL and compiled ahead of time to SPIR-V and MSL, so the engine draws on both Vulkan and Metal. A shader you pass to `newShader` is MSL only for now.
+nim2d is a 2D game framework for Nim, in the spirit of love2d. It is built on SDL3 and SDL's GPU API, licensed under zlib, and runs on macOS, Linux and Windows. It covers drawing (shapes, images, text, canvases, fragment shaders, a transform stack, sprite batches, meshes and particle systems), keyboard, mouse, gamepad and touch input, audio, a seeded random and noise module, CPU pixel buffers, the filesystem, data encoding and compression, window and system controls, background threads, and rigid-body physics through Box2D. The renderer is an SDL_GPU batch renderer. Images load through SDL3_image, text through SDL3_ttf, and sound through SDL3_mixer. Shaders are authored in GLSL and compiled ahead of time to SPIR-V and MSL, so the engine draws on both Vulkan and Metal; `newShader` also accepts Metal Shading Language source directly for Metal-only use.
 
 ## Documentation
 
-Guides are in `docs/`. An API reference is generated from the source with `make docs`, and `make serve` builds and serves it locally.
+Guides are in `docs/`, with screenshots rendered by the engine itself. An API reference is generated from the source with `make docs`, and `make serve` builds and serves everything locally. `make shots` re-renders the screenshots.
 
 ## Building
 

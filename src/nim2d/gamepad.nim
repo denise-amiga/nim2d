@@ -3,8 +3,8 @@
 ## Controllers are opened automatically when they connect (the event loop calls
 ## openGamepad), and the `gamepadpressed`, `gamepadreleased` and `gamepadaxis`
 ## callbacks report input. You can also poll with `isGamepadDown` and
-## `gamepadAxis`. Untested without a controller to hand, but built on the SDL3
-## gamepad API.
+## `gamepadAxis`. Built on the SDL3 gamepad API, so anything SDL recognizes as
+## a gamepad works.
 
 import std/tables
 import backend/sdl
@@ -73,16 +73,20 @@ proc toSdlAxis(a: GamepadAxis): SDL_GamepadAxis =
 var pads: Table[GamepadId, ptr SDL_Gamepad]
 
 proc openGamepad*(id: GamepadId) =
+  ## Open a controller. The event loop calls this when one connects, so games
+  ## normally never do.
   if id notin pads:
     let g = SDL_OpenGamepad(id)
     if g != nil: pads[id] = g
 
 proc closeGamepad*(id: GamepadId) =
+  ## Close a controller. The event loop calls this when one disconnects.
   if id in pads:
     SDL_CloseGamepad(pads[id])
     pads.del(id)
 
 proc connectedGamepads*(): seq[GamepadId] =
+  ## The ids of every connected controller.
   for id in pads.keys: result.add id
 
 proc isGamepadDown*(id: GamepadId, button: GamepadButton): bool =
