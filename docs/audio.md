@@ -11,9 +11,9 @@ music.play()
 
 The controls are what you would expect. `play` starts a source, or restarts it if it is already going, `pause` and `resume` hold and continue it, `stop` ends it and rewinds, and `rewind` and `seek` move the position, with `tell` reporting it in seconds. `isPlaying` and `isPaused` report the state, and `duration` is the length in seconds.
 
-`setVolume` sets a source's loudness from 0 to 1, and `setPitch` changes its pitch, which also changes its speed since the two move together. `setLooping` decides whether it repeats.
+`setVolume` sets a source's loudness, 0 silent to 1 full, with values above 1 amplifying. `setPitch` changes its pitch, which also changes its speed since the two move together, and `setLooping` decides whether it repeats. When a source is done for good, `destroy` stops it and frees its data.
 
-For positional sound, `setPosition` places a source in space so it pans left or right and fades with distance, and `clearPosition` turns that off. The listener sits at the origin by default, and `setListenerPosition` moves it, which shifts every positioned source to match. On the engine itself, `setVolume` is the master volume over everything and `stopAll` stops every source at once.
+For positional sound, `setPosition` places a source in space so it pans left or right and fades with distance, and `clearPosition` turns that off. The listener sits at the origin by default, `setListenerPosition` moves it, which shifts every positioned source to match, and `getListenerPosition` reads it back. On the engine itself, `setVolume` is the master volume over everything and `stopAll` stops every source at once.
 
 ```nim
 shot.setPosition(playerX - enemyX, 0)

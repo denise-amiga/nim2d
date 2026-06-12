@@ -58,7 +58,7 @@ n2d.update = proc(nim2d: Nim2d, dt: float) =
     paint(m.x, m.y)
 ```
 
-The cursor and capture have their own controls. `setMouseVisible` shows or hides the pointer and `isMouseVisible` reports it. `setRelativeMode` captures the mouse and hides the cursor so `mousemove` reports movement deltas without the pointer getting stuck at a screen edge, which is what you want for steering by mouse motion or for mouse-look, and `isRelativeMode` reads it back. `setMouseGrabbed` confines the cursor to the window, and `setMousePosition` warps it to a spot.
+The cursor and capture have their own controls. `setMouseVisible` shows or hides the pointer and `isMouseVisible` reports it. `setRelativeMode` captures the mouse and hides the cursor so `mousemove` reports movement deltas without the pointer getting stuck at a screen edge, which is what you want for steering by mouse motion or for mouse-look, and `isRelativeMode` reads it back. `setMouseGrabbed` confines the cursor to the window, `isMouseGrabbed` reads that back, and `setMousePosition` warps the cursor to a spot.
 
 ## Gamepads
 
@@ -70,9 +70,22 @@ n2d.gamepadpressed = proc(nim2d: Nim2d, id: GamepadId, button: GamepadButton) =
     jump()
 ```
 
+## Touch
+
+Touch arrives the same two ways. The `touchpressed`, `touchmoved` and `touchreleased` callbacks each give a finger id, the position in pixels, and the pressure, so multi-touch is a matter of keeping the ids apart. `getTouches` polls the live set of fingers instead, returning the same fields for every finger currently down. On a desktop the trackpad usually shows up as a touch device, which is handy for trying it out.
+
+```nim
+n2d.touchpressed = proc(nim2d: Nim2d, id: int64, x, y, pressure: float) =
+  rippleAt(x, y)
+
+n2d.update = proc(nim2d: Nim2d, dt: float) =
+  for finger in nim2d.getTouches():
+    paint(finger.x, finger.y)
+```
+
 ## Window events
 
-There are callbacks for window changes too, like `window_resized`, `window_focus_gained`, `window_focus_lost`, `window_minimized` and so on, plus `window_close` when someone closes the window. Each one is a `proc(nim2d: Nim2d)`. The quit callback runs when the program is shutting down.
+There are callbacks for window changes too, like `window_resized`, `window_focus_gained`, `window_focus_lost`, `window_minimized` and so on, plus `window_close` when someone closes the window. Each one is a `proc(nim2d: Nim2d)`. The quit callback runs once when the loop ends, however it ends, just before everything is torn down, so it is the place to save state.
 
 ```nim
 n2d.window_focus_lost = proc(nim2d: Nim2d) =
@@ -89,6 +102,8 @@ n2d.keydown = proc(nim2d: Nim2d, key: Key) =
     nim2d.setFullscreen(not nim2d.isFullscreen)
 ```
 
+`setVSync` turns vertical sync off or back on. With it off the loop runs as fast as it can, which is useful for benchmarking; `dt` keeps everything moving at the right speed either way. Passing `highDpi = true` to `newNim2d` asks for a backing buffer at the display's real pixel resolution, so on a 2x display the drawable, and what `getWidth` and `getHeight` report, is twice the window's point size; `getDPIScale` tells you the ratio, and mouse positions arrive already scaled to match.
+
 ## Timing
 
 `update` already receives `dt`, the seconds since the last frame, which is what you multiply speeds by so motion stays the same regardless of frame rate. If you need timing elsewhere, `getTime` returns seconds as a high-resolution number, `getDelta` returns the same `dt` as the last frame, and `getFPS` returns the current frames per second. `sleep` pauses for a number of seconds.
@@ -99,4 +114,4 @@ nim2d.print("fps: " & $int(nim2d.getFPS), 16, 16)
 
 ## Quitting
 
-Set `nim2d.running` to false to end the loop, or just close the window.
+Set `nim2d.running` to false to end the loop, or just close the window. Either way the quit callback gets its turn before teardown.

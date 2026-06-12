@@ -44,7 +44,7 @@ Smaller multipliers on the input give larger, smoother features, and larger ones
 
 ## Bezier curves
 
-A `BezierCurve` is built from control points and gives you a smooth path through them. `evaluate` returns the point at a parameter from 0 to 1, and `render` samples the whole curve into a list of points you can hand straight to `line`.
+A `BezierCurve` is built from control points and gives you a smooth path through them. `evaluate` returns the point at a parameter from 0 to 1, and `render` samples the whole curve into a list of points you can hand straight to `line`. `derivative` gives back the curve whose evaluation is the original's tangent, which is how you point something along the path it is following.
 
 ```nim
 let curve = newBezierCurve(@[(0.0, 0.0), (120.0, 200.0), (300.0, 40.0)])

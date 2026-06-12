@@ -51,19 +51,13 @@ On an older Ubuntu, or any distribution without SDL3 packages, the same recipe b
 
 On Windows, every library ships prebuilt. Download the `-devel-...-mingw.zip` file from the releases page of each of [SDL](https://github.com/libsdl-org/SDL/releases), [SDL_image](https://github.com/libsdl-org/SDL_image/releases), [SDL_ttf](https://github.com/libsdl-org/SDL_ttf/releases) and [SDL_mixer](https://github.com/libsdl-org/SDL_mixer/releases), and merge the `x86_64-w64-mingw32` folder from each zip into one place, say `C:\sdl3`, so it has `bin`, `include` and `lib` folders. Then set the environment variable `NIM2D_SDL_PREFIX` to `C:/sdl3` and add `C:\sdl3\bin` to your `PATH` so the DLLs are found when your game runs.
 
-That environment variable works everywhere: if your libraries live somewhere unusual, point `NIM2D_SDL_PREFIX` at the prefix that holds their `include` and `lib` directories.
+The same environment variable works everywhere. If your libraries live somewhere unusual, point `NIM2D_SDL_PREFIX` at the prefix that holds their `include` and `lib` directories.
 
 There is one optional extra. The physics module builds on Box2D and is imported separately with `import nim2d/physics`, so you only need Box2D if you use it: `brew install box2d` on macOS, `sudo pacman -S box2d` on Arch, built from source elsewhere. The [physics page](physics.html) has the details.
 
 ## Installing nim2d
 
-nimble can install nim2d straight from the repository:
-
-```
-nimble install https://github.com/nim2d/nim2d
-```
-
-That makes `import nim2d` work in any program you compile. If you would rather poke at something running first, clone the repository and start an example:
+The quickest way to see something running is to clone the repository and start an example. Inside the clone everything is already wired up, so this is also the easiest way to check your SDL3 install:
 
 ```
 git clone https://github.com/nim2d/nim2d
@@ -72,6 +66,40 @@ nim c -r examples/snake.nim
 ```
 
 If a window opens and you are playing snake, everything is in place.
+
+For your own project, install nim2d through nimble:
+
+```
+nimble install nim2d
+```
+
+In a nimble project the same thing is a `requires "nim2d"` line in your .nimble file. To run the development version instead, install straight from the repository with `nimble install https://github.com/nim2d/nim2d@#head`.
+
+One small file is still needed. nim2d links the SDL3 libraries into your game at build time, and your project has to tell the compiler where they are, so put this `config.nims` next to your program. The default prefixes match the install steps above, and `NIM2D_SDL_PREFIX` overrides them, the same as everywhere else:
+
+```nim
+# config.nims
+proc linkSdl(prefix: string) =
+  switch("dynlibOverride", "SDL3")
+  switch("dynlibOverride", "SDL3_image")
+  switch("dynlibOverride", "SDL3_ttf")
+  switch("dynlibOverride", "SDL3_mixer")
+  switch("passC", "-I" & prefix & "/include")
+  switch("passL", "-L" & prefix & "/lib")
+  switch("passL", "-lSDL3")
+  switch("passL", "-lSDL3_image")
+  switch("passL", "-lSDL3_ttf")
+  switch("passL", "-lSDL3_mixer")
+
+when defined(macosx):
+  linkSdl(getEnv("NIM2D_SDL_PREFIX", "/opt/homebrew"))
+elif defined(windows):
+  linkSdl(getEnv("NIM2D_SDL_PREFIX", "C:/sdl3"))
+else:
+  linkSdl(getEnv("NIM2D_SDL_PREFIX", "/usr/local"))
+```
+
+With that in place, `import nim2d` works in any program in that directory. The repository's own `config.nims` is the same thing with a few repo-specific extras, if you want to compare.
 
 ## The first program
 
@@ -89,7 +117,7 @@ n2d.draw = proc(nim2d: Nim2d) =
 n2d.play()
 ```
 
-Run it with `nim c -r hello.nim`. A window opens and stays up until you close it.
+The arguments to `newNim2d` are the title, the window position on the desktop, and the window size. Run it with `nim c -r hello.nim`. A window opens and stays up until you close it.
 
 .. image:: assets/hello.png
    :width: 480

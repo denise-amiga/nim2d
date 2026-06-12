@@ -1,6 +1,6 @@
 # Files
 
-Reading and writing files goes through `n2d.fs`, a small virtual filesystem. It knows two places. The save directory is the one writable spot, meant for save games and settings, and it lives in the per-user location the operating system sets aside for your program. The source directory is read-only and is where the program was launched from, which is where the assets you ship live.
+Reading and writing files goes through `n2d.fs`, a small virtual filesystem. It knows two places. The save directory is the one writable spot, meant for save games and settings, and it lives in the per-user location the operating system sets aside for your program. The source directory is read-only and is the directory the executable lives in, which is where the assets you ship live.
 
 Before you can write saves you set an identity, which picks the save directory's folder names. Do this once near the start.
 
@@ -19,6 +19,6 @@ if n2d.fs.exists("save.txt"):
     echo line
 ```
 
-`mount` adds another directory to search when reading and `unmount` removes it. `getDirectoryItems` lists the names in a directory across every search location with duplicates removed, `createDirectory` makes a folder in the save directory, `remove` deletes a file or an empty folder from it, and `getInfo` reports a name's kind, size and modification time.
+`mount` adds another directory to search when reading and `unmount` removes it. `getDirectoryItems` lists the names in a directory across every search location with duplicates removed, `createDirectory` makes a folder in the save directory, `remove` deletes a file or an empty folder from it, and `getInfo` reports a name's kind, size and modification time, as an `Option[FileInfo2d]` from `std/options` that is `none` when nothing by that name exists.
 
 Names are always relative and stay inside the sandbox, so a name with a leading slash or a `..` in it is refused rather than reaching outside the save and source directories. `getSaveDirectory` and `getSourceDirectory` tell you where those two places actually are on disk.

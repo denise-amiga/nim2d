@@ -15,7 +15,6 @@ proc dispatch*(nim2d: Nim2d, evt: SDL_Event) =
   ## this for every pending event each frame.
   let t = evt.type_field
   if t == uint32(SDL_EVENT_QUIT):
-    nim2d.quit(nim2d)
     nim2d.running = false
   elif t == uint32(SDL_EVENT_KEY_DOWN):
     nim2d.keydown(nim2d, toKey(evt.key.scancode))
@@ -75,6 +74,7 @@ proc dispatch*(nim2d: Nim2d, evt: SDL_Event) =
   elif t == uint32(SDL_EVENT_WINDOW_FOCUS_GAINED): nim2d.window_focus_gained(nim2d)
   elif t == uint32(SDL_EVENT_WINDOW_FOCUS_LOST): nim2d.window_focus_lost(nim2d)
   elif t == uint32(SDL_EVENT_WINDOW_CLOSE_REQUESTED):
+    # The quit callback is not fired here; play() calls it once when the loop
+    # ends, whichever way it ends.
     nim2d.window_close(nim2d)
-    nim2d.quit(nim2d)
     nim2d.running = false

@@ -52,12 +52,17 @@ proc toKey*(sc: SDL_Scancode): Key =
 
 proc keyScancode*(key: Key): SDL_Scancode =
   ## The SDL scancode for a Key, the inverse of `toKey`.
+  # SDL_Scancode has holes, so computed conversions warn, but the three ranges
+  # used here (A..Z, 1..0, F1..F12) are contiguous in the SDL header, so every
+  # value lands on a real member.
+  {.push warning[HoleEnumConv]: off.}
   if key >= Key.a and key <= Key.z:
     return SDL_Scancode(ord(SDL_SCANCODE_A) + (ord(key) - ord(Key.a)))
   if key >= Key.one and key <= Key.nine:
     return SDL_Scancode(ord(SDL_SCANCODE_1) + (ord(key) - ord(Key.one)))
   if key >= Key.f1 and key <= Key.f12:
     return SDL_Scancode(ord(SDL_SCANCODE_F1) + (ord(key) - ord(Key.f1)))
+  {.pop.}
   case key
   of Key.zero: SDL_SCANCODE_0
   of Key.space: SDL_SCANCODE_SPACE

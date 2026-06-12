@@ -6,7 +6,7 @@ All drawing happens inside the `draw` callback. The window has already cleared t
 
 ## Color
 
-`setColor` sets the color used by every shape and by text until you change it. The alpha argument is optional and defaults to fully opaque. You can pass three or four bytes, or a single `Color` written however reads best: by name (`setColor(orange)`), from bytes (`setColor(rgb(255, 120, 60))`), from a hex string (`setColor(color("#ff7a3c"))`), or as a gray level (`setColor(gray(128))`). The window background takes a `Color` the same way. `withAlpha` gives back a color with a different alpha, and `lerp` blends two colors.
+`setColor` sets the color used by every shape and by text until you change it. The alpha argument is optional and defaults to fully opaque. You can pass three or four bytes, or a single `Color` written however reads best: by name (`setColor(orange)`), from bytes (`setColor(rgb(255, 120, 60))`, with `rgba` when you want the alpha too), from a hex string (`setColor(color("#ff7a3c"))`), or as a gray level (`setColor(gray(128))`). The window background takes a `Color` the same way. `withAlpha` gives back a color with a different alpha, and `lerp` blends two colors.
 
 ```nim
 nim2d.setColor(255, 120, 60)        # opaque orange
@@ -83,6 +83,8 @@ nim2d.setBlendMode("add")
 nim2d.setBlendMode("blend")   # back to normal
 ```
 
+The same modes exist as the `BlendMode` enum, `bmAlpha`, `bmAdd`, `bmMod` and `bmNone`, which is what `withBlend` takes to set a mode for one block and put the old one back.
+
 ## Images
 
 Load an image once, usually before the loop or in `load`, and draw it many times.
@@ -93,6 +95,8 @@ let sprite = n2d.newImage("player.png")
 n2d.draw = proc(nim2d: Nim2d) =
   sprite.draw(nim2d, 100, 80)
 ```
+
+A note on paths. The asset loaders, `newImage`, `newFont` and `newSource`, open files relative to the process working directory, which is wherever the program was started from, not necessarily where the executable is. The examples build their paths with `getAppDir()` from `std/os`, which is the executable's directory, and that is a good habit for anything you ship.
 
 `draw` takes a position and a few optional arguments for rotation, scale and origin. The angle is in radians. The scale is separate for x and y. The origin is the point inside the image that sits at the position you gave and that rotation turns around, so passing half the width and height spins the image about its center.
 
@@ -105,7 +109,7 @@ let (w, h) = sprite.getDimensions
 sprite.draw(nim2d, x, y, angle, 0.5, 0.5, w.float / 2, h.float / 2)
 ```
 
-You can tint an image with `setColorMod` and fade it with `setAlphaMod`. There are also `getWidth`, `getHeight` and `getDimensions`.
+You can tint an image with `setColorMod` and fade it with `setAlphaMod`. There are also `getWidth`, `getHeight` and `getDimensions`. The `flipH` and `flipV` arguments of `draw` mirror the image, and `destroy` frees a texture early if you are churning through many of them.
 
 By default an image is sampled smoothly, which is right for photos and high-resolution art but blurs pixel art when you scale it up. Call `setFilter(filNearest)` for sharp, blocky sampling that keeps pixel art crisp, or `setFilter(filLinear)` to go back. `setWrap` controls what happens when texcoords run outside the image, which comes up when you draw a quad larger than the texture: `wrapClamp` holds the edge pixel (the default), `wrapRepeat` tiles the image, and `wrapMirror` tiles it flipping every other copy. Both settings apply to canvases as well. Pass `mipmaps = true` to `newImage` to build a mipmap chain, which stops a texture from shimmering when it is drawn much smaller than its native size.
 
@@ -155,10 +159,10 @@ n2d.draw = proc(nim2d: Nim2d) =
 
 `print` also takes an optional angle and scale. A font can tell you its `getAscent`, `getDescent` and `getHeight`, and `getSize` gives the pixel width and height a string would take, which is what you use to center or right-align text.
 
-For pixel-art text there are bitmap fonts, like the digits in the lower half of the picture. A bitmap font is a glyph sheet where the characters sit in a row, separated by columns of the sheet's top-left pixel color. Load it with `newImageFont`, listing the characters in image order, and use it like any other font; it is sampled crisply, tinted by the current color, and scales to any size.
+For pixel-art text there are bitmap fonts, like the digits in the lower half of the picture. A bitmap font is a glyph sheet where the characters sit in a row, separated by columns of the sheet's top-left pixel color. Load it with `newImageFont`, listing the characters in image order, and use it like any other font; it is sampled crisply, tinted by the current color, and scales to any size. The one difference is that `print`'s rotation argument has no effect on a bitmap font, so wrap the call in the transform stack when you need rotated text.
 
 ```nim
-let pixels = newImageFont("font.png", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ")
+let pixels = n2d.newImageFont("font.png", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ")
 nim2d.setFont(pixels)
 nim2d.print("SCORE 1234", 20, 20, 0, 4, 4)   # scaled up 4x
 ```
@@ -206,7 +210,7 @@ A particle system spawns lots of short-lived particles and animates them for you
    :width: 560
    :alt: a particle fountain and a burst, drawn with additive blending
 
-The setters cover the usual things. `setEmissionRate` is how many particles per second, `setParticleLifetime` is how long each one lives, `setSpeed`, `setDirection` and `setSpread` control how they fly out, `setLinearAcceleration` is a constant pull like gravity, and `setSizes` and `setColors` fade each particle from a start value to an end value over its life. `setPosition` moves the emitter. `emit` spawns a batch right now, which is handy for one-off bursts like the one at the top right of the picture.
+The setters cover the usual things. `setEmissionRate` is how many particles per second, `setParticleLifetime` is how long each one lives, `setSpeed`, `setDirection` and `setSpread` control how they fly out, `setLinearAcceleration` is a constant pull like gravity, and `setSizes` and `setColors` fade each particle from a start value to an end value over its life. `setPosition` moves the emitter. `emit` spawns a batch right now, which is handy for one-off bursts like the one at the top right of the picture. `setSpin` gives each particle a rotation over its life, `stop` and `start` pause and resume emission while the live particles play out, and `count` reports how many are alive.
 
 ```nim
 let ps = newParticleSystem()
@@ -251,7 +255,7 @@ n2d.draw = proc(nim2d: Nim2d) =
   canvas.draw(nim2d, 50, 50)     # draw the canvas like any image
 ```
 
-`clear` fills the current target with a color, and called with no color it uses the background.
+`clear` fills the current target with a color, and called with no color it uses the background. `withCanvas` wraps the switch and the switch back around a block.
 
 You can also go the other way and read a canvas back to the CPU. `newImageData(canvas)` downloads the pixels into an `ImageData`, which you can inspect or save to a PNG with `encode`. The renderer defers its work until the end of the frame, so the pixels are what the canvas held after the last completed frame: draw to the canvas in one frame, read it back in the next, in `update`. This is how the screenshots in these docs are made, and it works just as well for letting players save a picture of their creation.
 

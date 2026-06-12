@@ -3,8 +3,8 @@
 ## A `Filesystem` knows two places. The save directory is writable and is where
 ## `write`, `append`, `createDirectory` and `remove` act; you pick it once with
 ## `setIdentity`, which uses the platform's per-user preferences path. The
-## source directory is read-only and is where the program was launched from. You
-## can add more read directories with `mount`. Reading searches the save
+## source directory is read-only and is the directory the executable lives in.
+## You can add more read directories with `mount`. Reading searches the save
 ## directory first, then the source directory, then the mounts.
 ##
 ## Names are relative and stay inside the sandbox, so a name with a leading slash

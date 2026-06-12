@@ -1,5 +1,5 @@
-## A showcase that touches most of what nim2d exposes right now. It draws shapes,
-## images, fonts and a canvas, and handles input, running on SDL3 and the GPU.
+## A showcase that touches most of what nim2d does. It draws shapes, images,
+## fonts and a canvas, and handles input, running on SDL3 and the GPU.
 
 import std/[math, os]
 import nim2d

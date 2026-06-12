@@ -55,11 +55,15 @@ proc newImageFont*(nim2d: Nim2d, filename, glyphs: string, spacing: int32 = 1): 
   nim2d.newImageFont(newImageData(filename), glyphs, spacing)
 
 proc getAscent*(font: Font): int =
-  ## How far the font reaches above the baseline, in pixels.
+  ## How far the font reaches above the baseline, in pixels. A bitmap font
+  ## reports its glyph height, since it draws from the top.
+  if font.img != nil: return font.imgH.int
   TTF_GetFontAscent(cast[ptr TTF_Font](font.font)).int
 
 proc getDescent*(font: Font): int =
   ## How far the font reaches below the baseline, as a negative pixel count.
+  ## A bitmap font reports 0.
+  if font.img != nil: return 0
   TTF_GetFontDescent(cast[ptr TTF_Font](font.font)).int
 
 proc getHeight*(font: Font): int =

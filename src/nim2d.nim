@@ -1,5 +1,7 @@
-## nim2d is a small 2D game engine for Nim, loosely modeled on love2d, running on
-## SDL3 and its GPU API.
+## nim2d is a small 2D game engine for Nim, in the spirit of love2d, running on
+## SDL3 and its GPU API. This module re-exports everything except physics,
+## which sits on an optional Box2D dependency and is imported separately with
+## `import nim2d/physics`.
 
 import nim2d/backend/sdl
 import nim2d/types
@@ -45,7 +47,9 @@ proc `draw=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
   ## Set the callback that draws each frame. All drawing goes here.
   n2d.draw = p
 proc `quit=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
-  ## Set the callback that runs when the program is shutting down.
+  ## Set the callback that runs once when the main loop ends, however it ends:
+  ## the window closing or `running` set to false. It runs before teardown, so
+  ## it is the place to save state.
   n2d.quit = p
 proc `keydown=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, key: Key)) =
   ## Set the callback for a key going down.
@@ -259,8 +263,9 @@ proc newNim2d*(title: string, x, y, width, height: cint): Nim2d =
 
 proc play*(nim2d: Nim2d) =
   ## Run the main loop: dispatch events, call `update` and `draw` every frame,
-  ## and keep going until the window closes or `running` is set to false. Tears
-  ## down audio, the GPU and the window on the way out.
+  ## and keep going until the window closes or `running` is set to false. The
+  ## `quit` callback runs once after the loop, then audio, the GPU and the
+  ## window are torn down.
   nim2d.load(nim2d)
   nim2d.lastCounter = SDL_GetPerformanceCounter()
   var evt: SDL_Event
@@ -282,6 +287,7 @@ proc play*(nim2d: Nim2d) =
       nim2d.draw(nim2d)
       nim2d.gpu.endFrame()
 
+  nim2d.quit(nim2d)
   nim2d.shutdownAudio()
   nim2d.gpu.destroy()
   SDL_DestroyWindow(nim2d.gpu.window)

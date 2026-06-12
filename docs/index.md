@@ -17,8 +17,8 @@ The docs come in two parts. The guides are hand-written and walk through how thi
 - [Data](data.html), encoding, hashing, compression and packing
 - [Files](filesystem.html), the save directory and reading what you ship
 - [Audio](audio.html), loading and playing sounds
-- [System](system.html), clipboard, battery and other platform bits
+- [System](system.html), clipboard, battery, background threads and other platform bits
 - [Physics](physics.html), rigid bodies on Box2D
 - [Examples](examples.html), the runnable demos in the repository
-- [API reference](api/nim2d.html), the main module, with links to every other module under it
+- [API reference](api/nim2d.html), the main module, with links to every other module under it, except [physics](api/physics.html), which is imported separately
 - [Symbol index](api/theindex.html), every type and proc in one list

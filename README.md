@@ -2,11 +2,15 @@
 
 [![Tests](https://github.com/nim2d/nim2d/actions/workflows/tests.yml/badge.svg)](https://github.com/nim2d/nim2d/actions/workflows/tests.yml)
 
-nim2d is a 2D game framework for Nim, in the spirit of love2d. It is built on SDL3 and SDL's GPU API, licensed under zlib, and runs on macOS, Linux and Windows. It covers drawing (shapes, images, text, canvases, fragment shaders, a transform stack, sprite batches, meshes and particle systems), keyboard, mouse, gamepad and touch input, audio, a seeded random and noise module, CPU pixel buffers, the filesystem, data encoding and compression, window and system controls, background threads, and rigid-body physics through Box2D. The renderer is an SDL_GPU batch renderer. Images load through SDL3_image, text through SDL3_ttf, and sound through SDL3_mixer. Shaders are authored in GLSL and compiled ahead of time to SPIR-V and MSL, so the engine draws on both Vulkan and Metal; `newShader` also accepts Metal Shading Language source directly for Metal-only use.
+nim2d is a 2D game engine for Nim, in the spirit of love2d. It is built on SDL3 and SDL's GPU API, licensed under zlib, and runs on macOS, Linux and Windows. It covers drawing (shapes, images, text, canvases, fragment shaders, a transform stack, sprite batches, meshes and particle systems), keyboard, mouse, gamepad and touch input, audio, a seeded random and noise module, CPU pixel buffers, the filesystem, data encoding and compression, window and system controls, background threads, and rigid-body physics through Box2D. The renderer is an SDL_GPU batch renderer. Images load through SDL3_image, text through SDL3_ttf, and sound through SDL3_mixer. Shaders are authored in GLSL and compiled ahead of time to SPIR-V and MSL, so the engine draws on both Vulkan and Metal; `newShader` also accepts Metal Shading Language source directly for Metal-only use.
 
 ## Documentation
 
-Guides are in `docs/`, with screenshots rendered by the engine itself. An API reference is generated from the source with `make docs`, and `make serve` builds and serves everything locally. `make shots` re-renders the screenshots.
+The guides and the API reference live at [nim2d.github.io/nim2d](https://nim2d.github.io/nim2d/), published from every push to master. The sources are in `docs/`, with screenshots rendered by the engine itself; `make docs` builds everything locally, `make serve` serves it, and `make shots` re-renders the screenshots.
+
+## Installing
+
+nim2d is installed with nimble, either `nimble install nim2d` or a `requires "nim2d"` line in your project's .nimble file. The SDL3 libraries below still have to be installed on the machine, since nim2d links them into your game at build time, and your project needs a small `config.nims` pointing the compiler at them. The [getting started guide](docs/getting-started.md) walks through both.
 
 ## Building
 

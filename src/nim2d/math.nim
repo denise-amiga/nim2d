@@ -85,7 +85,8 @@ func lerp*(a, b: Vec2, t: float): Vec2 =
   (a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t)
 
 func rotated*(a: Vec2, angle: float): Vec2 =
-  ## a turned counter-clockwise by angle radians.
+  ## a turned by angle radians, which appears clockwise on screen since y
+  ## points down.
   let c = cos(angle)
   let s = sin(angle)
   (a.x * c - a.y * s, a.x * s + a.y * c)

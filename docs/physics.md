@@ -39,7 +39,7 @@ n2d.draw = proc(nim2d: Nim2d) =
   nim2d.pop()
 ```
 
-Bodies come in three kinds. Dynamic bodies move and collide, static ones never move and make floors and walls, and kinematic ones move only by the velocity you set. `addBox` and `addCircle` give a body a shape with a density, friction and restitution, where restitution is bounciness. You read a body back with `position`, `angle` and `velocity`, push it around with `setVelocity`, `applyForce` and `applyImpulse`, or place it with `setPosition`. `destroy` removes a body, and destroying the world frees everything in it.
+Bodies come in three kinds. Dynamic bodies move and collide, static ones never move and make floors and walls, and kinematic ones move only by the velocity you set. `addBox` and `addCircle` give a body a shape with a density, friction and restitution, where restitution is bounciness. `addBox` takes half extents, so `addBox(0.5, 0.5)` is a box one unit on a side. You read a body back with `position`, `angle` and `velocity`, push it around with `setVelocity`, `applyForce` and `applyImpulse`, or place it with `setPosition`. `destroy` removes a body, and destroying the world frees everything in it.
 
 Step the world with a steady `update(dt)` for the most stable result; the sub-step count is tunable but the default is fine.
 
