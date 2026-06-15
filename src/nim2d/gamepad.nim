@@ -77,7 +77,8 @@ proc openGamepad*(id: GamepadId) =
   ## normally never do.
   if id notin pads:
     let g = SDL_OpenGamepad(id)
-    if g != nil: pads[id] = g
+    if g != nil:
+      pads[id] = g
 
 proc closeGamepad*(id: GamepadId) =
   ## Close a controller. The event loop calls this when one disconnects.
@@ -87,12 +88,19 @@ proc closeGamepad*(id: GamepadId) =
 
 proc connectedGamepads*(): seq[GamepadId] =
   ## The ids of every connected controller.
-  for id in pads.keys: result.add id
+  for id in pads.keys:
+    result.add id
 
 proc isGamepadDown*(id: GamepadId, button: GamepadButton): bool =
   ## Whether a controller button is currently held.
-  if id in pads: SDL_GetGamepadButton(pads[id], toSdlButton(button)) else: false
+  if id in pads:
+    SDL_GetGamepadButton(pads[id], toSdlButton(button))
+  else:
+    false
 
 proc gamepadAxis*(id: GamepadId, axis: GamepadAxis): float =
   ## Axis value from -1 to 1 (triggers run 0 to 1).
-  if id in pads: SDL_GetGamepadAxis(pads[id], toSdlAxis(axis)).float / 32767.0 else: 0.0
+  if id in pads:
+    SDL_GetGamepadAxis(pads[id], toSdlAxis(axis)).float / 32767.0
+  else:
+    0.0

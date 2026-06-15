@@ -2,7 +2,7 @@ NIM ?= nim
 OUT := docs/html
 API := $(OUT)/api
 GIT_URL := https://github.com/nim2d/nim2d
-PAGES := index getting-started drawing input math data filesystem audio system physics examples
+PAGES := index getting-started drawing input math data filesystem audio system physics camera collide tween schedule scene animation tilemap examples
 
 .PHONY: docs api pages shots format format-check clean serve
 

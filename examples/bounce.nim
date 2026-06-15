@@ -18,17 +18,20 @@ type Ball = object
 var balls: seq[Ball]
 randomize()
 
-let n2d = newNim2d("nim2d - bounce", 120, 80, W.cint, H.cint, (18'u8, 18'u8, 26'u8, 255'u8))
+let n2d =
+  newNim2d("nim2d - bounce", 120, 80, W.cint, H.cint, (18'u8, 18'u8, 26'u8, 255'u8))
 let font = newFont(getAppDir() / "font.ttf", 22)
 n2d.setFont(font)
 
 proc spawn(x, y: float) =
   balls.add Ball(
-    x: x, y: y,
-    vx: rand(-280.0..280.0),
+    x: x,
+    y: y,
+    vx: rand(-280.0 .. 280.0),
     vy: rand(-260.0 .. -40.0),
-    r: rand(12.0..34.0),
-    col: (uint8 rand(80..255), uint8 rand(80..255), uint8 rand(80..255), 255'u8))
+    r: rand(12.0 .. 34.0),
+    col: (uint8 rand(80 .. 255), uint8 rand(80 .. 255), uint8 rand(80 .. 255), 255'u8),
+  )
 
 for _ in 0 ..< 18:
   spawn(rand(60.0 .. (W - 60).float), rand(60.0 .. (H / 2)))
@@ -39,23 +42,33 @@ n2d.mousepressed = proc(nim2d: Nim2d, x, y: float, button: MouseButton, clicks: 
 n2d.keydown = proc(nim2d: Nim2d, scancode: Key) =
   case scancode
   of Key.space:
-    for _ in 0 ..< 12: spawn(W / 2, H / 2)
-  of Key.c: balls.setLen(0)
-  of Key.escape: nim2d.running = false
-  else: discard
+    for _ in 0 ..< 12:
+      spawn(W / 2, H / 2)
+  of Key.c:
+    balls.setLen(0)
+  of Key.escape:
+    nim2d.running = false
+  else:
+    discard
 
 n2d.update = proc(nim2d: Nim2d, dt: float) =
   for b in balls.mitems:
     b.vy += Gravity * dt
     b.x += b.vx * dt
     b.y += b.vy * dt
-    if b.x - b.r < 0:          b.x = b.r;            b.vx = -b.vx * Damp
-    if b.x + b.r > W.float:     b.x = W.float - b.r;  b.vx = -b.vx * Damp
+    if b.x - b.r < 0:
+      b.x = b.r
+      b.vx = -b.vx * Damp
+    if b.x + b.r > W.float:
+      b.x = W.float - b.r
+      b.vx = -b.vx * Damp
     if b.y + b.r > H.float:
       b.y = H.float - b.r
       b.vy = -b.vy * Damp
       b.vx *= 0.98
-    if b.y - b.r < 0:          b.y = b.r;            b.vy = -b.vy * Damp
+    if b.y - b.r < 0:
+      b.y = b.r
+      b.vy = -b.vy * Damp
 
 n2d.draw = proc(nim2d: Nim2d) =
   for b in balls:

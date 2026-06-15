@@ -9,7 +9,8 @@ const
   W = 800
   H = 600
 
-let n2d = newNim2d("nim2d - input", 130, 80, W.cint, H.cint, (18'u8, 20'u8, 28'u8, 255'u8))
+let n2d =
+  newNim2d("nim2d - input", 130, 80, W.cint, H.cint, (18'u8, 20'u8, 28'u8, 255'u8))
 let font = newFont(getAppDir() / "font.ttf", 24)
 n2d.setFont(font)
 
@@ -35,18 +36,24 @@ n2d.mousewheel = proc(nim2d: Nim2d, x, y: float) =
 
 n2d.update = proc(nim2d: Nim2d, dt: float) =
   let speed = 320.0 * dt
-  if isDown(Key.left) or isDown(Key.a): px -= speed
-  if isDown(Key.right) or isDown(Key.d): px += speed
-  if isDown(Key.up) or isDown(Key.w): py -= speed
-  if isDown(Key.down) or isDown(Key.s): py += speed
+  if isDown(Key.left) or isDown(Key.a):
+    px -= speed
+  if isDown(Key.right) or isDown(Key.d):
+    px += speed
+  if isDown(Key.up) or isDown(Key.w):
+    py -= speed
+  if isDown(Key.down) or isDown(Key.s):
+    py += speed
 
 n2d.draw = proc(nim2d: Nim2d) =
   nim2d.setColor(120, 200, 255)
   nim2d.rectangle(px - size / 2, py - size / 2, size, size, true, 6)
 
   let m = mousePosition()
-  if isMouseDown(1): nim2d.setColor(255, 90, 90)
-  else: nim2d.setColor(230, 230, 240)
+  if isMouseDown(1):
+    nim2d.setColor(255, 90, 90)
+  else:
+    nim2d.setColor(230, 230, 240)
   nim2d.circle(m.x, m.y, 10, true)
 
   nim2d.setColor(230, 235, 245)

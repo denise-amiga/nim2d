@@ -22,7 +22,8 @@ import types
 import backend/sdl
 import backend/renderer
 
-const Preamble = """
+const Preamble =
+  """
 #include <metal_stdlib>
 using namespace metal;
 struct VSOutput { float4 position [[position]]; float2 uv [[user(locn0)]]; float4 color [[user(locn1)]]; };
@@ -35,8 +36,12 @@ proc newShader*(nim2d: Nim2d, fragmentSrc: string, uniformFloats = 0): Shader =
   result = Shader(hasUniform: uniformFloats > 0)
   if uniformFloats > 0:
     result.uniform = newSeq[byte](uniformFloats * sizeof(float32))
-  result.pipelines = nim2d.gpu.createShaderPipelines(Preamble & fragmentSrc, "frag",
-      SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_MSL), result.hasUniform)
+  result.pipelines = nim2d.gpu.createShaderPipelines(
+    Preamble & fragmentSrc,
+    "frag",
+    SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_MSL),
+    result.hasUniform,
+  )
 
 proc newShader*(nim2d: Nim2d, spirv, msl: string, uniformFloats = 0): Shader =
   ## Compile a fragment shader from precompiled cross-platform blobs: SPIR-V for
@@ -51,11 +56,14 @@ proc newShader*(nim2d: Nim2d, spirv, msl: string, uniformFloats = 0): Shader =
   result.pipelines = nim2d.gpu.createShaderPipelines(
     (if useSpv: spirv else: msl),
     (if useSpv: "main".cstring else: "main0".cstring),
-    nim2d.gpu.shaderFormat, result.hasUniform)
+    nim2d.gpu.shaderFormat,
+    result.hasUniform,
+  )
 
 proc send*(shader: Shader, values: openArray[float32]) =
   ## Fill the fragment uniform buffer with float32 values.
-  if not shader.hasUniform or values.len == 0: return
+  if not shader.hasUniform or values.len == 0:
+    return
   let n = min(values.len * sizeof(float32), shader.uniform.len)
   copyMem(addr shader.uniform[0], unsafeAddr values[0], n)
 

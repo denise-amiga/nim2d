@@ -10,8 +10,16 @@ const
   W = 820
   H = 540
 
-let n2d = newNim2d("nim2d - polish", 100, 70, W.cint, H.cint,
-                   (16'u8, 18'u8, 26'u8, 255'u8), aa = 2, stencil = true)
+let n2d = newNim2d(
+  "nim2d - polish",
+  100,
+  70,
+  W.cint,
+  H.cint,
+  (16'u8, 18'u8, 26'u8, 255'u8),
+  aa = 2,
+  stencil = true,
+)
 let font = newFont(getAppDir() / "font.ttf", 16)
 
 proc checker(size, cells: int32): ImageData =
@@ -21,13 +29,19 @@ proc checker(size, cells: int32): ImageData =
   for y in 0'i32 ..< size:
     for x in 0'i32 ..< size:
       let on = ((x div cs) + (y div cs)) mod 2 == 0
-      result.setPixel(x, y, (if on: (235'u8, 235'u8, 235'u8, 255'u8)
-                             else: (70'u8, 100'u8, 165'u8, 255'u8)))
+      result.setPixel(
+        x,
+        y,
+        (if on: (235'u8, 235'u8, 235'u8, 255'u8) else: (70'u8, 100'u8, 165'u8, 255'u8)),
+      )
 
 let small = checker(4, 2)
-let sharp = n2d.newImage(small); sharp.setFilter(filNearest)
+let sharp = n2d.newImage(small)
+sharp.setFilter(filNearest)
 let smooth = n2d.newImage(small)
-let tiled = n2d.newImage(small); tiled.setFilter(filNearest); tiled.setWrap(wrapRepeat)
+let tiled = n2d.newImage(small)
+tiled.setFilter(filNearest)
+tiled.setWrap(wrapRepeat)
 let mip = n2d.newImage(checker(64, 16), mipmaps = true)
 
 var t = 0.0
@@ -38,7 +52,8 @@ proc label(g: Nim2d, s: string, x, y: float) =
   g.print(s, x, y)
 
 n2d.keydown = proc(nim2d: Nim2d, sc: Key) =
-  if sc == Key.escape: nim2d.running = false
+  if sc == Key.escape:
+    nim2d.running = false
 
 n2d.update = proc(nim2d: Nim2d, dt: float) =
   t += dt
@@ -48,7 +63,7 @@ n2d.draw = proc(nim2d: Nim2d) =
   nim2d.setColor(255, 255, 255)
   sharp.draw(nim2d, 20, 40, 0, 22, 22)
   smooth.draw(nim2d, 130, 40, 0, 22, 22)
-  let q = newQuad(0, 0, 16, 16, 4, 4)            # texcoords run 0..4, so it tiles
+  let q = newQuad(0, 0, 16, 16, 4, 4) # texcoords run 0..4, so it tiles
   tiled.draw(nim2d, q, 240, 40, 0, 5.5, 5.5)
   # mipmaps: the same texture at shrinking scales stays clean instead of fuzzing
   mip.draw(nim2d, 360, 40, 0, 0.9, 0.9)
@@ -75,8 +90,10 @@ n2d.draw = proc(nim2d: Nim2d) =
 
   # stencil: stripes clipped to a moving circle
   let mx = 200.0 + sin(t) * 70
-  nim2d.stencil(proc(m: Nim2d) =
-    m.circle(mx, 445, 72, filled = true))
+  nim2d.stencil(
+    proc(m: Nim2d) =
+      m.circle(mx, 445, 72, filled = true)
+  )
   for i in 0 ..< 44:
     nim2d.setColor(uint8(120 + i * 3), 110, uint8(250 - i * 3))
     nim2d.rectangle(110, 376 + i.float * 4, 180, 4, filled = true)

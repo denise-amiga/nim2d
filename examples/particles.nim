@@ -9,7 +9,8 @@ const
   H = 640
 
 randomize()
-let n2d = newNim2d("nim2d - particles", 130, 80, W.cint, H.cint, (8'u8, 8'u8, 14'u8, 255'u8))
+let n2d =
+  newNim2d("nim2d - particles", 130, 80, W.cint, H.cint, (8'u8, 8'u8, 14'u8, 255'u8))
 let font = newFont(getAppDir() / "font.ttf", 22)
 n2d.setFont(font)
 
@@ -42,7 +43,8 @@ n2d.mousepressed = proc(nim2d: Nim2d, x, y: float, button: MouseButton, clicks: 
   ps.setPosition(ex, ey)
 
 n2d.keydown = proc(nim2d: Nim2d, scancode: Key) =
-  if scancode == Key.escape: nim2d.running = false
+  if scancode == Key.escape:
+    nim2d.running = false
 
 n2d.update = proc(nim2d: Nim2d, dt: float) =
   ps.update(dt)

@@ -21,16 +21,17 @@ proc writeWav(path: string, samples: seq[int16]) =
   s.write(uint32(36 + dataSize))
   s.write("WAVE")
   s.write("fmt ")
-  s.write(uint32(16))               # PCM fmt chunk size
-  s.write(uint16(1))                # PCM
-  s.write(uint16(1))                # mono
+  s.write(uint32(16)) # PCM fmt chunk size
+  s.write(uint16(1)) # PCM
+  s.write(uint16(1)) # mono
   s.write(uint32(sampleRate))
-  s.write(uint32(sampleRate * 2))   # byte rate (mono, 16-bit)
-  s.write(uint16(2))                # block align
-  s.write(uint16(16))               # bits per sample
+  s.write(uint32(sampleRate * 2)) # byte rate (mono, 16-bit)
+  s.write(uint16(2)) # block align
+  s.write(uint16(16)) # bits per sample
   s.write("data")
   s.write(uint32(dataSize))
-  for v in samples: s.write(v)
+  for v in samples:
+    s.write(v)
   s.close()
 
 proc sample(freq, t, amp: float): int16 =
@@ -49,7 +50,7 @@ proc makeBlip(): seq[int16] =
 # A two second arpeggio that loops cleanly: four notes, each with an envelope
 # that returns to zero, so the seam between repeats is silent.
 proc makeMusic(): seq[int16] =
-  let notes = [261.63, 329.63, 392.0, 523.25]   # C4 E4 G4 C5
+  let notes = [261.63, 329.63, 392.0, 523.25] # C4 E4 G4 C5
   let noteDur = 0.5
   let perNote = int(noteDur * sampleRate)
   result = newSeq[int16](perNote * notes.len)

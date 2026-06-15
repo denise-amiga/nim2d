@@ -1,5 +1,5 @@
 import std/unittest
-import std/strutils   # repeat
+import std/strutils # repeat
 import nim2d/data
 
 suite "data (encoding / hashing / compression / packing)":
@@ -19,7 +19,7 @@ suite "data (encoding / hashing / compression / packing)":
     check encode(bytes, hex = true) == "000fff10"
     check decode("000fff10", hex = true) == bytes
     expect ValueError:
-      discard decode("abc", hex = true)   # odd length
+      discard decode("abc", hex = true) # odd length
 
   test "digests match known vectors and are lowercase hex":
     check digest(hfMD5, "") == "d41d8cd98f00b204e9800998ecf8427e"
@@ -35,7 +35,7 @@ suite "data (encoding / hashing / compression / packing)":
     check digestRaw(hfSHA256, "abc".toOpenArrayByte(0, 2)).len == 32
 
   test "compression round-trips in every format":
-    let payload = "nim2d ".repeat(64)   # repetitive so it actually shrinks
+    let payload = "nim2d ".repeat(64) # repetitive so it actually shrinks
     for fmt in [compZlib, compGzip, compDeflate]:
       let packed = compress(payload, fmt)
       check packed.len < payload.len
@@ -44,7 +44,7 @@ suite "data (encoding / hashing / compression / packing)":
   test "pack lays out bytes by width and endianness":
     check pack("<i", 1) == @[1'u8, 0, 0, 0]
     check pack(">i", 1) == @[0'u8, 0, 0, 1]
-    check pack("<h", 258) == @[2'u8, 1]          # 0x0102
+    check pack("<h", 258) == @[2'u8, 1] # 0x0102
     check pack(">h", 258) == @[1'u8, 2]
     check pack("bb", -1, 127) == @[255'u8, 127]
 
@@ -53,6 +53,6 @@ suite "data (encoding / hashing / compression / packing)":
     check unpack(">l", pack(">l", -5)) == @[-5'i64]
     check unpack("<hHb", pack("<hHb", -2, 40000, -1)) == @[-2'i64, 40000, -1]
     expect ValueError:
-      discard unpack("<i", @[1'u8, 2])   # too short
+      discard unpack("<i", @[1'u8, 2]) # too short
     expect ValueError:
-      discard pack("<i")                 # missing argument
+      discard pack("<i") # missing argument

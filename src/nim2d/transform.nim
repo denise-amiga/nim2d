@@ -12,10 +12,9 @@
 
 import std/math
 
-type
-  Transform* = object
-    ## A 2D affine transform as the six significant components of a 3x3 matrix.
-    a*, b*, c*, d*, e*, f*: float
+type Transform* = object
+  ## A 2D affine transform as the six significant components of a 3x3 matrix.
+  a*, b*, c*, d*, e*, f*: float
 
 func identity*(): Transform =
   ## The transform that maps every point to itself.

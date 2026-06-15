@@ -24,36 +24,45 @@ type
   FileItemKind* = enum
     ## What a name points at. `fikOther` covers symlinks to non-files, devices
     ## and anything that is neither a plain file nor a directory.
-    fikFile, fikDirectory, fikOther
+    fikFile
+    fikDirectory
+    fikOther
 
-  FileInfo2d* = object
-    ## What `getInfo` reports about a name.
+  FileInfo2d* = object ## What `getInfo` reports about a name.
     kind*: FileItemKind
-    size*: int64          ## size in bytes (0 for directories)
-    modtime*: int64       ## last modification time, Unix seconds
+    size*: int64 ## size in bytes (0 for directories)
+    modtime*: int64 ## last modification time, Unix seconds
 
 # --- helpers ---------------------------------------------------------------
 
 proc validRelative(name: string): bool =
   ## A name is usable only if it is relative and never steps out of the sandbox.
-  if name.len == 0: return false
-  if isAbsolute(name): return false
+  if name.len == 0:
+    return false
+  if isAbsolute(name):
+    return false
   for part in name.split({'/', '\\'}):
-    if part == "..": return false
+    if part == "..":
+      return false
   true
 
 proc readRoots(fs: Filesystem): seq[string] =
   result = @[]
-  if fs.saveDir.len > 0: result.add fs.saveDir
-  if fs.sourceDir.len > 0: result.add fs.sourceDir
-  for m in fs.mounts: result.add m
+  if fs.saveDir.len > 0:
+    result.add fs.saveDir
+  if fs.sourceDir.len > 0:
+    result.add fs.sourceDir
+  for m in fs.mounts:
+    result.add m
 
 proc resolveRead(fs: Filesystem, name: string): string =
   ## The first existing path for `name` across the search roots, or "".
-  if not validRelative(name): return ""
+  if not validRelative(name):
+    return ""
   for root in fs.readRoots():
     let p = root / name
-    if fileExists(p) or dirExists(p): return p
+    if fileExists(p) or dirExists(p):
+      return p
   ""
 
 proc saveWritePath(fs: Filesystem, name: string): string =
@@ -65,7 +74,8 @@ proc saveWritePath(fs: Filesystem, name: string): string =
     raise newException(IOError, "invalid file name '" & name & "'")
   result = fs.saveDir / name
   let parent = result.parentDir
-  if parent.len > 0: createDir(parent)
+  if parent.len > 0:
+    createDir(parent)
 
 # --- construction / identity -----------------------------------------------
 
@@ -73,7 +83,7 @@ proc newFilesystem*(): Filesystem =
   ## Create a filesystem with the source directory set to the program's base
   ## path and no save identity yet.
   result = Filesystem(mounts: @[])
-  let bp = SDL_GetBasePath()   # SDL owns this string, do not free it
+  let bp = SDL_GetBasePath() # SDL owns this string, do not free it
   if bp != nil:
     result.sourceDir = $bp
   else:
@@ -86,7 +96,7 @@ proc setIdentity*(fs: Filesystem, org, app: string) =
   if p == nil:
     raise newException(IOError, "could not open save directory: " & $SDL_GetError())
   fs.saveDir = $p
-  SDL_free(cast[pointer](p))   # SDL allocated this string, free it with SDL_free
+  SDL_free(cast[pointer](p)) # SDL allocated this string, free it with SDL_free
   fs.identitySet = true
 
 proc setIdentity*(fs: Filesystem, app: string) =
@@ -143,24 +153,33 @@ proc exists*(fs: Filesystem, name: string): bool =
 proc getInfo*(fs: Filesystem, name: string): Option[FileInfo2d] =
   ## Type, size and modification time for a name if it exists, or none.
   let path = fs.resolveRead(name)
-  if path.len == 0: return none(FileInfo2d)
+  if path.len == 0:
+    return none(FileInfo2d)
   let info = getFileInfo(path)
   var kind = fikOther
   case info.kind
-  of pcFile, pcLinkToFile: kind = fikFile
-  of pcDir, pcLinkToDir: kind = fikDirectory
-  some(FileInfo2d(kind: kind, size: info.size.int64,
-                  modtime: info.lastWriteTime.toUnix))
+  of pcFile, pcLinkToFile:
+    kind = fikFile
+  of pcDir, pcLinkToDir:
+    kind = fikDirectory
+  some(
+    FileInfo2d(kind: kind, size: info.size.int64, modtime: info.lastWriteTime.toUnix)
+  )
 
 proc getDirectoryItems*(fs: Filesystem, dir: string): seq[string] =
   ## The names (not full paths) of entries in a directory, merged across the
   ## search roots with duplicates removed. An empty dir lists the top-level
   ## entries of each search root.
   result = @[]
-  if dir.len > 0 and not validRelative(dir): return
+  if dir.len > 0 and not validRelative(dir):
+    return
   var seen = initHashSet[string]()
   for root in fs.readRoots():
-    let base = if dir.len == 0: root else: root / dir
+    let base =
+      if dir.len == 0:
+        root
+      else:
+        root / dir
     if dirExists(base):
       for _, path in walkDir(base, relative = true):
         if path notin seen:
@@ -177,7 +196,8 @@ proc write*(fs: Filesystem, name: string, data: string) =
 proc write*(fs: Filesystem, name: string, data: openArray[byte]) =
   ## Write raw bytes to a file in the save directory, replacing it if it exists.
   let f = open(fs.saveWritePath(name), fmWrite)
-  defer: f.close()
+  defer:
+    f.close()
   if data.len > 0:
     discard f.writeBuffer(unsafeAddr data[0], data.len)
 
@@ -185,7 +205,8 @@ proc append*(fs: Filesystem, name: string, data: string) =
   ## Append data to the end of a file in the save directory, creating it if it
   ## does not exist.
   let f = open(fs.saveWritePath(name), fmAppend)
-  defer: f.close()
+  defer:
+    f.close()
   f.write(data)
 
 proc createDirectory*(fs: Filesystem, dir: string) =
@@ -199,13 +220,15 @@ proc createDirectory*(fs: Filesystem, dir: string) =
 proc remove*(fs: Filesystem, name: string): bool =
   ## Delete a file or empty directory from the save directory. Returns true if
   ## something was removed.
-  if fs.saveDir.len == 0 or not validRelative(name): return false
+  if fs.saveDir.len == 0 or not validRelative(name):
+    return false
   let path = fs.saveDir / name
   if fileExists(path):
     removeFile(path)
     return true
   if dirExists(path):
-    for _ in walkDir(path): return false   # not empty, leave it
+    for _ in walkDir(path):
+      return false # not empty, leave it
     removeDir(path)
     return true
   false

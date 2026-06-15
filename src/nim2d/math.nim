@@ -78,7 +78,10 @@ func length*(a: Vec2): float =
 func normalized*(a: Vec2): Vec2 =
   ## The unit vector pointing the same way as a, or (0, 0) if a has no length.
   let l = a.length
-  if l == 0: (0.0, 0.0) else: (a.x / l, a.y / l)
+  if l == 0:
+    (0.0, 0.0)
+  else:
+    (a.x / l, a.y / l)
 
 func lerp*(a, b: Vec2, t: float): Vec2 =
   ## Linear interpolation from a to b by t.
@@ -97,14 +100,13 @@ func fromAngle*(angle: float, magnitude = 1.0): Vec2 =
 
 # --- seeded generator (PCG32) ----------------------------------------------
 
-type
-  Rng* = object
-    ## A seeded pseudo-random generator. It is a PCG32: a 64-bit linear
-    ## congruential state with a permuted 32-bit output, small and fast, and it
-    ## gives the same sequence from the same seed on every platform.
-    state, inc: uint64
-    spare: float        ## cached second sample from the gaussian pair
-    hasSpare: bool
+type Rng* = object
+  ## A seeded pseudo-random generator. It is a PCG32: a 64-bit linear
+  ## congruential state with a permuted 32-bit output, small and fast, and it
+  ## gives the same sequence from the same seed on every platform.
+  state, inc: uint64
+  spare: float ## cached second sample from the gaussian pair
+  hasSpare: bool
 
 const
   pcgMul = 6364136223846793005'u64
@@ -134,11 +136,13 @@ proc newRng*(seed: uint64 = defaultSeed, seq: uint64 = defaultSeq): Rng =
 
 proc nextBounded(rng: var Rng, bound: uint32): uint32 =
   # A uniform value in [0, bound) with no modulo bias, by rejection.
-  if bound == 0: return rng.nextUint()
-  let threshold = (0'u32 - bound) mod bound   # 2^32 mod bound
+  if bound == 0:
+    return rng.nextUint()
+  let threshold = (0'u32 - bound) mod bound # 2^32 mod bound
   while true:
     let r = rng.nextUint()
-    if r >= threshold: return r mod bound
+    if r >= threshold:
+      return r mod bound
 
 proc random*(rng: var Rng): float =
   ## A uniform float from 0 up to 1.
@@ -155,7 +159,8 @@ proc random*(rng: var Rng, min, max: float): float =
 proc randomInt*(rng: var Rng, min, max: int): int =
   ## A uniform integer from min to max, both ends included. The span from min to
   ## max has to fit in 32 bits.
-  if max <= min: return min
+  if max <= min:
+    return min
   let span = uint64(max - min) + 1
   if span > uint64(high(uint32)):
     raise newException(ValueError, "randomInt: range wider than 2^32")
@@ -172,7 +177,8 @@ proc randomNormal*(rng: var Rng, mean = 0.0, stddev = 1.0): float =
     u = rng.random() * 2.0 - 1.0
     v = rng.random() * 2.0 - 1.0
     s = u * u + v * v
-    if s > 0.0 and s < 1.0: break
+    if s > 0.0 and s < 1.0:
+      break
   let mul = sqrt(-2.0 * ln(s) / s)
   rng.spare = v * mul
   rng.hasSpare = true
@@ -210,22 +216,21 @@ proc randomNormal*(mean = 0.0, stddev = 1.0): float =
 # --- noise -----------------------------------------------------------------
 
 const basePerm = [
-  151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140,
-  36, 103, 30, 69, 142, 8, 99, 37, 240, 21, 10, 23, 190, 6, 148, 247, 120, 234,
-  75, 0, 26, 197, 62, 94, 252, 219, 203, 117, 35, 11, 32, 57, 177, 33, 88, 237,
-  149, 56, 87, 174, 20, 125, 136, 171, 168, 68, 175, 74, 165, 71, 134, 139, 48,
-  27, 166, 77, 146, 158, 231, 83, 111, 229, 122, 60, 211, 133, 230, 220, 105,
-  92, 41, 55, 46, 245, 40, 244, 102, 143, 54, 65, 25, 63, 161, 1, 216, 80, 73,
-  209, 76, 132, 187, 208, 89, 18, 169, 200, 196, 135, 130, 116, 188, 159, 86,
-  164, 100, 109, 198, 173, 186, 3, 64, 52, 217, 226, 250, 124, 123, 5, 202, 38,
-  147, 118, 126, 255, 82, 85, 212, 207, 206, 59, 227, 47, 16, 58, 17, 182, 189,
-  28, 42, 223, 183, 170, 213, 119, 248, 152, 2, 44, 154, 163, 70, 221, 153, 101,
-  155, 167, 43, 172, 9, 129, 22, 39, 253, 19, 98, 108, 110, 79, 113, 224, 232,
-  178, 185, 112, 104, 218, 246, 97, 228, 251, 34, 242, 193, 238, 210, 144, 12,
-  191, 179, 162, 241, 81, 51, 145, 235, 249, 14, 239, 107, 49, 192, 214, 31,
-  181, 199, 106, 157, 184, 84, 204, 176, 115, 121, 50, 45, 127, 4, 150, 254,
-  138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215,
-  61, 156, 180]
+  151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103,
+  30, 69, 142, 8, 99, 37, 240, 21, 10, 23, 190, 6, 148, 247, 120, 234, 75, 0, 26, 197,
+  62, 94, 252, 219, 203, 117, 35, 11, 32, 57, 177, 33, 88, 237, 149, 56, 87, 174, 20,
+  125, 136, 171, 168, 68, 175, 74, 165, 71, 134, 139, 48, 27, 166, 77, 146, 158, 231,
+  83, 111, 229, 122, 60, 211, 133, 230, 220, 105, 92, 41, 55, 46, 245, 40, 244, 102,
+  143, 54, 65, 25, 63, 161, 1, 216, 80, 73, 209, 76, 132, 187, 208, 89, 18, 169, 200,
+  196, 135, 130, 116, 188, 159, 86, 164, 100, 109, 198, 173, 186, 3, 64, 52, 217, 226,
+  250, 124, 123, 5, 202, 38, 147, 118, 126, 255, 82, 85, 212, 207, 206, 59, 227, 47, 16,
+  58, 17, 182, 189, 28, 42, 223, 183, 170, 213, 119, 248, 152, 2, 44, 154, 163, 70, 221,
+  153, 101, 155, 167, 43, 172, 9, 129, 22, 39, 253, 19, 98, 108, 110, 79, 113, 224, 232,
+  178, 185, 112, 104, 218, 246, 97, 228, 251, 34, 242, 193, 238, 210, 144, 12, 191, 179,
+  162, 241, 81, 51, 145, 235, 249, 14, 239, 107, 49, 192, 214, 31, 181, 199, 106, 157,
+  184, 84, 204, 176, 115, 121, 50, 45, 127, 4, 150, 254, 138, 236, 205, 93, 222, 114,
+  67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180,
+]
 
 const perm = block:
   var p: array[512, int]
@@ -235,21 +240,40 @@ const perm = block:
   p
 
 const grad3 = [
-  [1, 1, 0], [-1, 1, 0], [1, -1, 0], [-1, -1, 0],
-  [1, 0, 1], [-1, 0, 1], [1, 0, -1], [-1, 0, -1],
-  [0, 1, 1], [0, -1, 1], [0, 1, -1], [0, -1, -1]]
+  [1, 1, 0],
+  [-1, 1, 0],
+  [1, -1, 0],
+  [-1, -1, 0],
+  [1, 0, 1],
+  [-1, 0, 1],
+  [1, 0, -1],
+  [-1, 0, -1],
+  [0, 1, 1],
+  [0, -1, 1],
+  [0, 1, -1],
+  [0, -1, -1],
+]
 
-func fade(t: float): float = t * t * t * (t * (t * 6 - 15) + 10)
+func fade(t: float): float =
+  t * t * t * (t * (t * 6 - 15) + 10)
 
-func mix(a, b, t: float): float = a + (b - a) * t
+func mix(a, b, t: float): float =
+  a + (b - a) * t
 
-func to01(n: float): float = clamp((n + 1.0) * 0.5, 0.0, 0.999999)
+func to01(n: float): float =
+  clamp((n + 1.0) * 0.5, 0.0, 0.999999)
 
 func pgrad(hash: int, x, y, z: float): float =
   ## Improved-noise gradient: dot of (x,y,z) with one of twelve directions.
   let h = hash and 15
   let u = if h < 8: x else: y
-  let v = if h < 4: y elif h == 12 or h == 14: x else: z
+  let v =
+    if h < 4:
+      y
+    elif h == 12 or h == 14:
+      x
+    else:
+      z
   result = (if (h and 1) == 0: u else: -u) + (if (h and 2) == 0: v else: -v)
 
 func valueHash(i: int): float =
@@ -286,26 +310,36 @@ proc noise*(x, y, z: float): float =
     mix(
       mix(pgrad(perm[aa], xf, yf, zf), pgrad(perm[ba], xf - 1, yf, zf), u),
       mix(pgrad(perm[ab], xf, yf - 1, zf), pgrad(perm[bb], xf - 1, yf - 1, zf), u),
-      v),
+      v,
+    ),
     mix(
-      mix(pgrad(perm[aa + 1], xf, yf, zf - 1), pgrad(perm[ba + 1], xf - 1, yf, zf - 1), u),
-      mix(pgrad(perm[ab + 1], xf, yf - 1, zf - 1), pgrad(perm[bb + 1], xf - 1, yf - 1, zf - 1), u),
-      v),
-    w)
+      mix(
+        pgrad(perm[aa + 1], xf, yf, zf - 1), pgrad(perm[ba + 1], xf - 1, yf, zf - 1), u
+      ),
+      mix(
+        pgrad(perm[ab + 1], xf, yf - 1, zf - 1),
+        pgrad(perm[bb + 1], xf - 1, yf - 1, zf - 1),
+        u,
+      ),
+      v,
+    ),
+    w,
+  )
   to01(n)
 
 proc noise*(x, y: float): float =
   ## 2D Perlin noise mapped to the 0-to-1 range.
   noise(x, y, 0.0)
 
-func dot2(g: array[3, int], x, y: float): float = g[0].float * x + g[1].float * y
+func dot2(g: array[3, int], x, y: float): float =
+  g[0].float * x + g[1].float * y
 func dot3(g: array[3, int], x, y, z: float): float =
   g[0].float * x + g[1].float * y + g[2].float * z
 
 proc simplexNoise*(x, y: float): float =
   ## 2D simplex noise mapped to the 0-to-1 range. Fewer directional artifacts than Perlin.
-  const f2 = 0.3660254037844386      # 0.5 * (sqrt(3) - 1)
-  const g2 = 0.21132486540518708     # (3 - sqrt(3)) / 6
+  const f2 = 0.3660254037844386 # 0.5 * (sqrt(3) - 1)
+  const g2 = 0.21132486540518708 # (3 - sqrt(3)) / 6
   let s = (x + y) * f2
   let i = floor(x + s).int
   let j = floor(y + s).int
@@ -313,8 +347,10 @@ proc simplexNoise*(x, y: float): float =
   let x0 = x - (float(i) - t)
   let y0 = y - (float(j) - t)
   var i1, j1: int
-  if x0 > y0: (i1, j1) = (1, 0)
-  else: (i1, j1) = (0, 1)
+  if x0 > y0:
+    (i1, j1) = (1, 0)
+  else:
+    (i1, j1) = (0, 1)
   let x1 = x0 - float(i1) + g2
   let y1 = y0 - float(j1) + g2
   let x2 = x0 - 1.0 + 2.0 * g2
@@ -354,13 +390,19 @@ proc simplexNoise*(x, y, z: float): float =
   var i1, j1, k1: int
   var i2, j2, k2: int
   if x0 >= y0:
-    if y0 >= z0: (i1, j1, k1, i2, j2, k2) = (1, 0, 0, 1, 1, 0)
-    elif x0 >= z0: (i1, j1, k1, i2, j2, k2) = (1, 0, 0, 1, 0, 1)
-    else: (i1, j1, k1, i2, j2, k2) = (0, 0, 1, 1, 0, 1)
+    if y0 >= z0:
+      (i1, j1, k1, i2, j2, k2) = (1, 0, 0, 1, 1, 0)
+    elif x0 >= z0:
+      (i1, j1, k1, i2, j2, k2) = (1, 0, 0, 1, 0, 1)
+    else:
+      (i1, j1, k1, i2, j2, k2) = (0, 0, 1, 1, 0, 1)
   else:
-    if y0 < z0: (i1, j1, k1, i2, j2, k2) = (0, 0, 1, 0, 1, 1)
-    elif x0 < z0: (i1, j1, k1, i2, j2, k2) = (0, 1, 0, 0, 1, 1)
-    else: (i1, j1, k1, i2, j2, k2) = (0, 1, 0, 1, 1, 0)
+    if y0 < z0:
+      (i1, j1, k1, i2, j2, k2) = (0, 0, 1, 0, 1, 1)
+    elif x0 < z0:
+      (i1, j1, k1, i2, j2, k2) = (0, 1, 0, 0, 1, 1)
+    else:
+      (i1, j1, k1, i2, j2, k2) = (0, 1, 0, 1, 1, 0)
   let x1 = x0 - float(i1) + g3
   let y1 = y0 - float(j1) + g3
   let z1 = z0 - float(k1) + g3
@@ -398,10 +440,8 @@ proc simplexNoise*(x, y, z: float): float =
 
 # --- bezier curves ---------------------------------------------------------
 
-type
-  BezierCurve* = object
-    ## A Bezier curve of any degree, holding its control points.
-    points*: seq[Vec2]
+type BezierCurve* = object ## A Bezier curve of any degree, holding its control points.
+  points*: seq[Vec2]
 
 proc newBezierCurve*(points: openArray[Vec2]): BezierCurve =
   ## A Bezier curve through the given control points (degree = points.len - 1).
@@ -415,8 +455,9 @@ proc evaluate*(curve: BezierCurve, t: float): Vec2 =
   var n = pts.len
   while n > 1:
     for i in 0 ..< n - 1:
-      pts[i] = ((1.0 - t) * pts[i].x + t * pts[i + 1].x,
-                (1.0 - t) * pts[i].y + t * pts[i + 1].y)
+      pts[i] = (
+        (1.0 - t) * pts[i].x + t * pts[i + 1].x, (1.0 - t) * pts[i].y + t * pts[i + 1].y
+      )
     dec n
   pts[0]
 
@@ -427,8 +468,10 @@ proc derivative*(curve: BezierCurve): BezierCurve =
   let n = (curve.points.len - 1).float
   var d = newSeq[Vec2](curve.points.len - 1)
   for i in 0 ..< curve.points.len - 1:
-    d[i] = (n * (curve.points[i + 1].x - curve.points[i].x),
-            n * (curve.points[i + 1].y - curve.points[i].y))
+    d[i] = (
+      n * (curve.points[i + 1].x - curve.points[i].x),
+      n * (curve.points[i + 1].y - curve.points[i].y),
+    )
   BezierCurve(points: d)
 
 proc render*(curve: BezierCurve, segments = 30): seq[Vec2] =
@@ -447,14 +490,17 @@ proc isConvex*(points: openArray[Vec2]): bool =
   ## True when the polygon outline is convex (a triangle or fewer points counts
   ## as convex).
   let n = points.len
-  if n <= 3: return true
+  if n <= 3:
+    return true
   var sign = 0
   for i in 0 ..< n:
     let c = cross(points[i], points[(i + 1) mod n], points[(i + 2) mod n])
     if c != 0:
       let s = if c > 0: 1 else: -1
-      if sign == 0: sign = s
-      elif s != sign: return false
+      if sign == 0:
+        sign = s
+      elif s != sign:
+        return false
   true
 
 func pointInTriangle(p, a, b, c: Vec2): bool =
@@ -476,9 +522,11 @@ proc triangulate*(points: openArray[Vec2]): seq[uint32] =
     signedArea += points[i].x * points[j].y - points[j].x * points[i].y
   var v = newSeq[int](n)
   if signedArea >= 0:
-    for i in 0 ..< n: v[i] = i
+    for i in 0 ..< n:
+      v[i] = i
   else:
-    for i in 0 ..< n: v[i] = n - 1 - i
+    for i in 0 ..< n:
+      v[i] = n - 1 - i
 
   result = newSeqOfCap[uint32]((n - 2) * 3)
   while v.len > 3:
@@ -489,10 +537,12 @@ proc triangulate*(points: openArray[Vec2]): seq[uint32] =
       let a = points[v[ip]]
       let b = points[v[i]]
       let c = points[v[inx]]
-      if cross(a, b, c) <= 0: continue   # reflex or collinear, not an ear
+      if cross(a, b, c) <= 0:
+        continue # reflex or collinear, not an ear
       var ear = true
       for k in 0 ..< v.len:
-        if k == ip or k == i or k == inx: continue
+        if k == ip or k == i or k == inx:
+          continue
         if pointInTriangle(points[v[k]], a, b, c):
           ear = false
           break
@@ -504,8 +554,10 @@ proc triangulate*(points: openArray[Vec2]): seq[uint32] =
         clipped = true
         break
     if not clipped:
-      raise newException(ValueError,
-        "triangulate: no ear found (degenerate or self-intersecting polygon)")
+      raise newException(
+        ValueError,
+        "triangulate: no ear found (degenerate or self-intersecting polygon)",
+      )
   result.add uint32(v[0])
   result.add uint32(v[1])
   result.add uint32(v[2])
@@ -547,24 +599,35 @@ proc lerp*(a, b, t: float): float =
 
 proc gammaToLinear*(c: float): float =
   ## Convert one sRGB gamma-space channel, 0 to 1, into linear space.
-  if c <= 0.04045: c / 12.92
-  else: pow((c + 0.055) / 1.055, 2.4)
+  if c <= 0.04045:
+    c / 12.92
+  else:
+    pow((c + 0.055) / 1.055, 2.4)
 
 proc linearToGamma*(c: float): float =
   ## Convert one linear channel, 0 to 1, into sRGB gamma space.
-  if c <= 0.0031308: c * 12.92
-  else: 1.055 * pow(c, 1.0 / 2.4) - 0.055
+  if c <= 0.0031308:
+    c * 12.92
+  else:
+    1.055 * pow(c, 1.0 / 2.4) - 0.055
 
-func toByte(c: float): uint8 = uint8(clamp(c, 0.0, 1.0) * 255.0 + 0.5)
+func toByte(c: float): uint8 =
+  uint8(clamp(c, 0.0, 1.0) * 255.0 + 0.5)
 
 proc gammaToLinear*(c: Color): Color =
   ## Convert an sRGB color to linear space, leaving alpha unchanged.
-  (toByte(gammaToLinear(c.r.float / 255)),
-   toByte(gammaToLinear(c.g.float / 255)),
-   toByte(gammaToLinear(c.b.float / 255)), c.a)
+  (
+    toByte(gammaToLinear(c.r.float / 255)),
+    toByte(gammaToLinear(c.g.float / 255)),
+    toByte(gammaToLinear(c.b.float / 255)),
+    c.a,
+  )
 
 proc linearToGamma*(c: Color): Color =
   ## Convert a linear color to sRGB gamma space, leaving alpha unchanged.
-  (toByte(linearToGamma(c.r.float / 255)),
-   toByte(linearToGamma(c.g.float / 255)),
-   toByte(linearToGamma(c.b.float / 255)), c.a)
+  (
+    toByte(linearToGamma(c.r.float / 255)),
+    toByte(linearToGamma(c.g.float / 255)),
+    toByte(linearToGamma(c.b.float / 255)),
+    c.a,
+  )

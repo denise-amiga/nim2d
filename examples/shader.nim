@@ -14,7 +14,8 @@ const
 const plasmaSpv = staticRead("plasma.spv")
 const plasmaMsl = staticRead("plasma.metal")
 
-let n2d = newNim2d("nim2d - shader", 140, 90, W.cint, H.cint, (0'u8, 0'u8, 0'u8, 255'u8))
+let n2d =
+  newNim2d("nim2d - shader", 140, 90, W.cint, H.cint, (0'u8, 0'u8, 0'u8, 255'u8))
 let font = newFont(getAppDir() / "font.ttf", 22)
 n2d.setFont(font)
 
@@ -23,7 +24,8 @@ let plasma = n2d.newShader(plasmaSpv, plasmaMsl, uniformFloats = 4)
 var t = 0.0
 
 n2d.keydown = proc(nim2d: Nim2d, sc: Key) =
-  if sc == Key.escape: nim2d.running = false
+  if sc == Key.escape:
+    nim2d.running = false
 
 n2d.update = proc(nim2d: Nim2d, dt: float) =
   t += dt

@@ -35,15 +35,27 @@ func lerp*(a, b: Color, t: float): Color =
 proc color*(hex: string): Color =
   ## Parse a hex color: "#rgb", "#rrggbb" or "#rrggbbaa", with the # optional.
   var s = hex
-  if s.len > 0 and s[0] == '#': s = s[1 .. ^1]
-  proc hx(sub: string): uint8 = uint8(parseHexInt(sub))
+  if s.len > 0 and s[0] == '#':
+    s = s[1 .. ^1]
+  proc hx(sub: string): uint8 =
+    uint8(parseHexInt(sub))
+
   case s.len
-  of 3: (uint8(parseHexInt($s[0]) * 17), uint8(parseHexInt($s[1]) * 17),
-         uint8(parseHexInt($s[2]) * 17), 255'u8)
-  of 6: (hx(s[0..1]), hx(s[2..3]), hx(s[4..5]), 255'u8)
-  of 8: (hx(s[0..1]), hx(s[2..3]), hx(s[4..5]), hx(s[6..7]))
-  else: raise newException(ValueError,
-    "color: expected #rgb, #rrggbb or #rrggbbaa, got '" & hex & "'")
+  of 3:
+    (
+      uint8(parseHexInt($s[0]) * 17),
+      uint8(parseHexInt($s[1]) * 17),
+      uint8(parseHexInt($s[2]) * 17),
+      255'u8,
+    )
+  of 6:
+    (hx(s[0 .. 1]), hx(s[2 .. 3]), hx(s[4 .. 5]), 255'u8)
+  of 8:
+    (hx(s[0 .. 1]), hx(s[2 .. 3]), hx(s[4 .. 5]), hx(s[6 .. 7]))
+  else:
+    raise newException(
+      ValueError, "color: expected #rgb, #rrggbb or #rrggbbaa, got '" & hex & "'"
+    )
 
 # A small named palette, enough for quick sketches and HUDs. Built through `rgb`
 # so each is a proper Color (a bare tuple literal would lose the r/g/b/a names).

@@ -16,9 +16,10 @@ proc getProcessorCount*(): int =
 proc getClipboardText*(): string =
   ## The current clipboard text, or an empty string if there is none.
   let p = SDL_GetClipboardText()
-  if p == nil: return ""
+  if p == nil:
+    return ""
   result = $p
-  SDL_free(cast[pointer](p))   # SDL allocated this string, free it with SDL_free
+  SDL_free(cast[pointer](p)) # SDL allocated this string, free it with SDL_free
 
 proc setClipboardText*(text: string) =
   ## Put text on the clipboard.
@@ -38,7 +39,8 @@ proc getPowerInfo*(): tuple[state: string, percent: int, seconds: int] =
   ## and seconds are -1 when they cannot be determined.
   var secs, pct: cint = -1
   let st = SDL_GetPowerInfo(addr secs, addr pct)
-  let state = case st
+  let state =
+    case st
     of SDL_POWERSTATE_ON_BATTERY: "battery"
     of SDL_POWERSTATE_CHARGING: "charging"
     of SDL_POWERSTATE_CHARGED: "charged"

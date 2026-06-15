@@ -14,13 +14,14 @@ const
   Ball = 14.0
 
 var
-  ly, ry: float          # paddle y (top)
+  ly, ry: float # paddle y (top)
   bx, by, bvx, bvy: float
   lScore, rScore: int
   upHeld, downHeld: bool
 
 randomize()
-let n2d = newNim2d("nim2d - pong", 140, 90, W.cint, H.cint, (12'u8, 14'u8, 20'u8, 255'u8))
+let n2d =
+  newNim2d("nim2d - pong", 140, 90, W.cint, H.cint, (12'u8, 14'u8, 20'u8, 255'u8))
 let font = newFont(getAppDir() / "font.ttf", 28)
 let bigFont = newFont(getAppDir() / "font.ttf", 64)
 
@@ -28,61 +29,81 @@ proc serve(toLeft: bool) =
   bx = W / 2
   by = H / 2
   bvx = (if toLeft: -340.0 else: 340.0)
-  bvy = rand(-200.0..200.0)
+  bvy = rand(-200.0 .. 200.0)
 
 proc reset() =
   ly = H / 2 - PadH / 2
   ry = ly
   lScore = 0
   rScore = 0
-  serve(rand(0..1) == 0)
+  serve(rand(0 .. 1) == 0)
 
 reset()
 
 n2d.keydown = proc(nim2d: Nim2d, scancode: Key) =
   case scancode
-  of Key.w, Key.up: upHeld = true
-  of Key.s, Key.down: downHeld = true
-  of Key.r: reset()
-  of Key.escape: nim2d.running = false
-  else: discard
+  of Key.w, Key.up:
+    upHeld = true
+  of Key.s, Key.down:
+    downHeld = true
+  of Key.r:
+    reset()
+  of Key.escape:
+    nim2d.running = false
+  else:
+    discard
 
 n2d.keyup = proc(nim2d: Nim2d, scancode: Key) =
   case scancode
-  of Key.w, Key.up: upHeld = false
-  of Key.s, Key.down: downHeld = false
-  else: discard
+  of Key.w, Key.up:
+    upHeld = false
+  of Key.s, Key.down:
+    downHeld = false
+  else:
+    discard
 
 proc clampPad(y: float): float =
   max(0.0, min(H.float - PadH, y))
 
 n2d.update = proc(nim2d: Nim2d, dt: float) =
   # player
-  if upHeld: ly = clampPad(ly - PadSpeed * dt)
-  if downHeld: ly = clampPad(ly + PadSpeed * dt)
+  if upHeld:
+    ly = clampPad(ly - PadSpeed * dt)
+  if downHeld:
+    ly = clampPad(ly + PadSpeed * dt)
   # ai tracks the ball
   let target = by - PadH / 2
-  if ry + 4 < target: ry = clampPad(ry + AiSpeed * dt)
-  elif ry - 4 > target: ry = clampPad(ry - AiSpeed * dt)
+  if ry + 4 < target:
+    ry = clampPad(ry + AiSpeed * dt)
+  elif ry - 4 > target:
+    ry = clampPad(ry - AiSpeed * dt)
 
   # ball
   bx += bvx * dt
   by += bvy * dt
-  if by - Ball < 0: by = Ball; bvy = -bvy
-  if by + Ball > H.float: by = H.float - Ball; bvy = -bvy
+  if by - Ball < 0:
+    by = Ball
+    bvy = -bvy
+  if by + Ball > H.float:
+    by = H.float - Ball
+    bvy = -bvy
 
   # paddle collisions
   if bvx < 0 and bx - Ball < PadW + 24 and bx > 24 and by > ly and by < ly + PadH:
     bvx = -bvx * 1.05
     bvy += (by - (ly + PadH / 2)) * 4
-  if bvx > 0 and bx + Ball > W.float - PadW - 24 and bx < W.float - 24 and
-     by > ry and by < ry + PadH:
+  if bvx > 0 and bx + Ball > W.float - PadW - 24 and bx < W.float - 24 and by > ry and
+      by < ry + PadH:
     bvx = -bvx * 1.05
     bvy += (by - (ry + PadH / 2)) * 4
 
   # scoring
-  if bx < -Ball: inc rScore; serve(false)
-  if bx > W.float + Ball: inc lScore; serve(true)
+  if bx < -Ball:
+    inc rScore
+    serve(false)
+  if bx > W.float + Ball:
+    inc lScore
+    serve(true)
 
 n2d.draw = proc(nim2d: Nim2d) =
   # center dashed line

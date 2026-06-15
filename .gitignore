@@ -8,6 +8,15 @@
 # Nim build artifacts
 nimcache/
 tests/test_nim2d
+tests/test_data
+tests/test_filesystem
+tests/test_camera
+tests/test_collide
+tests/test_tween
+tests/test_schedule
+tests/test_scene
+tests/test_animation
+tests/test_tilemap
 tests/physics_smoke
 
 # Generated documentation (regenerate with `make docs`)
@@ -28,6 +37,14 @@ examples/*
 examples/assets/*
 !examples/assets/*.wav
 !examples/assets/*.nim
+!examples/tilemap/
+examples/tilemap/*
+!examples/tilemap/*.nim
+!examples/tilemap/*.ldtk
+!examples/tilemap/*.ttf
+!examples/tilemap/atlas/
+examples/tilemap/atlas/*
+!examples/tilemap/atlas/*.png
 
 # Local-only example directories, not part of the tracked tree.
 examples/danmaku/

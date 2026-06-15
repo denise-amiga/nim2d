@@ -28,26 +28,103 @@ type
     ## How drawing mixes with what is already on the target: no blending,
     ## ordinary alpha blending, additive (brightens, good for glow), or
     ## multiplicative (darkens).
-    bmNone, bmAlpha, bmAdd, bmMod
+    bmNone
+    bmAlpha
+    bmAdd
+    bmMod
 
   Key* {.pure.} = enum
     ## A keyboard key, delivered to the keydown and keyup callbacks and accepted
     ## by `isDown`. Use it qualified, like `Key.escape`, `Key.space` or `Key.a`.
     ## Keys without a name here arrive as `Key.unknown`.
     unknown
-    a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z
-    one, two, three, four, five, six, seven, eight, nine, zero
-    f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12
-    space, enter, escape, tab, backspace, delete
-    left, right, up, down
-    lshift, rshift, lctrl, rctrl, lalt, ralt
-    home, End, pageUp, pageDown
-    minus, equals, comma, period, slash, backslash, grave, semicolon, apostrophe
-    leftBracket, rightBracket
+    a
+    b
+    c
+    d
+    e
+    f
+    g
+    h
+    i
+    j
+    k
+    l
+    m
+    n
+    o
+    p
+    q
+    r
+    s
+    t
+    u
+    v
+    w
+    x
+    y
+    z
+    one
+    two
+    three
+    four
+    five
+    six
+    seven
+    eight
+    nine
+    zero
+    f1
+    f2
+    f3
+    f4
+    f5
+    f6
+    f7
+    f8
+    f9
+    f10
+    f11
+    f12
+    space
+    enter
+    escape
+    tab
+    backspace
+    delete
+    left
+    right
+    up
+    down
+    lshift
+    rshift
+    lctrl
+    rctrl
+    lalt
+    ralt
+    home
+    End
+    pageUp
+    pageDown
+    minus
+    equals
+    comma
+    period
+    slash
+    backslash
+    grave
+    semicolon
+    apostrophe
+    leftBracket
+    rightBracket
 
   MouseButton* {.pure.} = enum
     ## A mouse button, delivered to the mousepressed and mousereleased callbacks.
-    left, right, middle, x1, x2
+    left
+    right
+    middle
+    x1
+    x2
 
   GamepadId* = SDL_JoystickID
     ## Identifies a connected controller, handed to the gamepad callbacks and
@@ -58,33 +135,52 @@ type
     ## isGamepadDown. The face buttons are named by position: south/east/west/
     ## north are A/B/X/Y on an Xbox-style pad.
     unknown
-    south, east, west, north
-    back, guide, start
-    leftStick, rightStick
-    leftShoulder, rightShoulder
-    dpadUp, dpadDown, dpadLeft, dpadRight
+    south
+    east
+    west
+    north
+    back
+    guide
+    start
+    leftStick
+    rightStick
+    leftShoulder
+    rightShoulder
+    dpadUp
+    dpadDown
+    dpadLeft
+    dpadRight
 
   GamepadAxis* {.pure.} = enum
     ## A controller axis, delivered to the gamepadaxis callback and accepted by
     ## gamepadAxis. Sticks run -1 to 1, triggers 0 to 1.
     unknown
-    leftX, leftY, rightX, rightY, leftTrigger, rightTrigger
+    leftX
+    leftY
+    rightX
+    rightY
+    leftTrigger
+    rightTrigger
 
   PipelineKind* = enum
     ## Which built-in pipeline a draw uses: plain vertex colors or a texture.
-    pkColored, pkTextured
+    pkColored
+    pkTextured
 
   # --- Drawables -----------------------------------------------------------
-
   Drawable* = ref object of RootObj
     ## The base of everything that can be drawn to the screen.
 
   Filter* = enum
     ## Texture sampling: smooth (the default) or sharp, for pixel art.
-    filLinear, filNearest
+    filLinear
+    filNearest
+
   Wrap* = enum
     ## How texcoords outside 0..1 are handled.
-    wrapClamp, wrapRepeat, wrapMirror
+    wrapClamp
+    wrapRepeat
+    wrapMirror
 
   Texture* = ref object of Drawable
     ## A GPU texture with its size and sampling state. Images and canvases are
@@ -92,16 +188,17 @@ type
     tex*: ptr SDL_GPUTexture
     width*: int32
     height*: int32
-    tint*: Color          ## color/alpha modulation applied when drawn
-    filter*: Filter       ## linear by default
-    wrap*: Wrap           ## clamp by default
+    tint*: Color ## color/alpha modulation applied when drawn
+    filter*: Filter ## linear by default
+    wrap*: Wrap ## clamp by default
 
   Image* = ref object of Texture
     ## A texture loaded from a file or uploaded from an ImageData.
 
   Canvas* = ref object of Texture
     ## A render target (GPU texture created with COLOR_TARGET usage).
-    depth*: ptr SDL_GPUTexture   ## paired depth-stencil target, only when stencil is enabled
+    depth*: ptr SDL_GPUTexture
+      ## paired depth-stencil target, only when stencil is enabled
 
   Quad* = object
     ## A rectangular sub-region of a texture, as texcoords plus its pixel size.
@@ -111,14 +208,14 @@ type
   Font* = ref object
     ## A font for `print`: either a TrueType font opened through SDL_ttf, or a
     ## bitmap font built from a glyph sheet by `newImageFont`.
-    engine*: pointer      ## TTF_TextEngine (GPU text engine)
-    font*: pointer        ## TTF_Font (nil for a bitmap/image font)
+    engine*: pointer ## TTF_TextEngine (GPU text engine)
+    font*: pointer ## TTF_Font (nil for a bitmap/image font)
     size*: cint
-    img*: Image           ## glyph sheet, set for a bitmap/image font
-    glyphSet*: string     ## the characters, in image order
-    glyphX*, glyphW*: seq[int32]  ## each glyph's x and width in the sheet
-    imgH*: int32          ## glyph height (the sheet height)
-    spacing*: int32       ## pixels added between glyphs
+    img*: Image ## glyph sheet, set for a bitmap/image font
+    glyphSet*: string ## the characters, in image order
+    glyphX*, glyphW*: seq[int32] ## each glyph's x and width in the sheet
+    imgH*: int32 ## glyph height (the sheet height)
+    spacing*: int32 ## pixels added between glyphs
 
   Shader* = ref object
     ## A user fragment shader compiled into one pipeline per blend mode, with an
@@ -127,8 +224,7 @@ type
     uniform*: seq[byte]
     hasUniform*: bool
 
-  Scissor* = object
-    ## A clip rectangle in render-target pixels, off when `on` is false.
+  Scissor* = object ## A clip rectangle in render-target pixels, off when `on` is false.
     on*: bool
     x*, y*, w*, h*: int32
 
@@ -142,7 +238,6 @@ type
     identitySet*: bool
 
   # --- GPU context ---------------------------------------------------------
-
   DrawCmd* = object
     ## A run of indices sharing pipeline/blend/texture/scissor/shader state.
     kind*: PipelineKind
@@ -173,22 +268,23 @@ type
     ## engine; games normally never touch it directly.
     device*: ptr SDL_GPUDevice
     window*: ptr SDL_Window
-    swFormat*: SDL_GPUTextureFormat   ## swapchain format; render targets must match it
-    shaderFormat*: SDL_GPUShaderFormat  ## MSL or SPIR-V, chosen from the device backend
-    sampler*: ptr SDL_GPUSampler        ## default sampler (linear, clamp)
-    samplers*: array[Filter, array[Wrap, ptr SDL_GPUSampler]]  ## cache for other combos
-    ssFactor*: int32                    ## supersample factor for anti-aliasing (1 = off)
-    ssTex*: ptr SDL_GPUTexture          ## the high-res offscreen target when supersampling
-    ssW*, ssH*: int32                   ## supersample target size
-    frameW*, frameH*: int32             ## logical frame size, for the downscale blit
-    stencilEnabled*: bool               ## whether the depth-stencil machinery is built
-    depthFormat*: SDL_GPUTextureFormat  ## chosen depth-stencil format
-    screenDepth*, ssDepth*: ptr SDL_GPUTexture  ## depth-stencil targets for screen/SS
+    swFormat*: SDL_GPUTextureFormat ## swapchain format; render targets must match it
+    shaderFormat*: SDL_GPUShaderFormat ## MSL or SPIR-V, chosen from the device backend
+    sampler*: ptr SDL_GPUSampler ## default sampler (linear, clamp)
+    samplers*: array[Filter, array[Wrap, ptr SDL_GPUSampler]] ## cache for other combos
+    ssFactor*: int32 ## supersample factor for anti-aliasing (1 = off)
+    ssTex*: ptr SDL_GPUTexture ## the high-res offscreen target when supersampling
+    ssW*, ssH*: int32 ## supersample target size
+    frameW*, frameH*: int32 ## logical frame size, for the downscale blit
+    stencilEnabled*: bool ## whether the depth-stencil machinery is built
+    depthFormat*: SDL_GPUTextureFormat ## chosen depth-stencil format
+    screenDepth*, ssDepth*: ptr SDL_GPUTexture ## depth-stencil targets for screen/SS
     screenDepthW*, screenDepthH*: int32 ## size the screen depth target was made at
-    stencilMode*: uint8                 ## 0 none, 1 write the mask, 2 test against it
+    stencilMode*: uint8 ## 0 none, 1 write the mask, 2 test against it
     stencilWritePipe*: ptr SDL_GPUGraphicsPipeline
-    stencilTestPipes*: array[PipelineKind, array[BlendMode, ptr SDL_GPUGraphicsPipeline]]
-    whiteTex*: ptr SDL_GPUTexture     ## 1x1 white, bound when a shader draw has no texture
+    stencilTestPipes*:
+      array[PipelineKind, array[BlendMode, ptr SDL_GPUGraphicsPipeline]]
+    whiteTex*: ptr SDL_GPUTexture ## 1x1 white, bound when a shader draw has no texture
     pipelines*: array[PipelineKind, array[BlendMode, ptr SDL_GPUGraphicsPipeline]]
 
     # CPU-side geometry for the whole frame (deferred upload)
@@ -207,7 +303,7 @@ type
     cmd*: ptr SDL_GPUCommandBuffer
     swTex*: ptr SDL_GPUTexture
     passes*: seq[RenderPassRec]
-    tempTextures*: seq[ptr SDL_GPUTexture]  ## released after the frame submits
+    tempTextures*: seq[ptr SDL_GPUTexture] ## released after the frame submits
 
     # Current transform, baked into vertices as they are added
     transform*: Transform
@@ -218,7 +314,6 @@ type
     curShader*: Shader
 
   # --- Engine --------------------------------------------------------------
-
   Nim2d* = ref object
     ## The engine: the window, the renderer, the current draw state, timing,
     ## and the callbacks the main loop dispatches to. Make one with `newNim2d`,

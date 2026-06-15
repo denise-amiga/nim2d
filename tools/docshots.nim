@@ -17,15 +17,16 @@ const Dt = 1.0 / 60.0
 
 type Scene = object
   name: string
-  w, h: int32                 # logical size of the saved image
-  frames: int                  # frames to run before the capture
+  w, h: int32 # logical size of the saved image
+  frames: int # frames to run before the capture
   bg: Color
   init: proc(n: Nim2d)
   tick: proc(n: Nim2d, t, dt: float)
   draw: proc(n: Nim2d, t: float, shot: Canvas)
 
-let n2d = newNim2d("nim2d docs shots", 80, 80, 760, 460, (18'u8, 18'u8, 24'u8, 255'u8),
-                   stencil = true)
+let n2d = newNim2d(
+  "nim2d docs shots", 80, 80, 760, 460, (18'u8, 18'u8, 24'u8, 255'u8), stencil = true
+)
 
 # Shared assets. The fonts and the logo come from the examples folder.
 let labelFont = newFont("examples/font.ttf", 16)
@@ -37,9 +38,13 @@ let logo = n2d.newImage("examples/Nim-logo.png")
 # A small checkerboard texture for the textured mesh.
 let checker = block:
   var data = newImageData(8, 8)
-  data.mapPixel(proc(x, y: int32, c: Color): Color =
-    if (x + y) mod 2 == 0: (60'u8, 170'u8, 165'u8, 255'u8)
-    else: (235'u8, 238'u8, 245'u8, 255'u8))
+  data.mapPixel(
+    proc(x, y: int32, c: Color): Color =
+      if (x + y) mod 2 == 0:
+        (60'u8, 170'u8, 165'u8, 255'u8)
+      else:
+        (235'u8, 238'u8, 245'u8, 255'u8)
+  )
   let img = n2d.newImage(data)
   img.setFilter(filNearest)
   img
@@ -55,11 +60,17 @@ proc downsample(src: ImageData): ImageData =
       for dy in 0'i32 .. 1:
         for dx in 0'i32 .. 1:
           let c = src.getPixel(x * 2 + dx, y * 2 + dy)
-          r += c.r.int; g += c.g.int; b += c.b.int; a += c.a.int
-      result.setPixel(x, y, (uint8(r div 4), uint8(g div 4), uint8(b div 4), uint8(a div 4)))
+          r += c.r.int
+          g += c.g.int
+          b += c.b.int
+          a += c.a.int
+      result.setPixel(
+        x, y, (uint8(r div 4), uint8(g div 4), uint8(b div 4), uint8(a div 4))
+      )
 
-proc starShape(cx, cy, outer, inner: float, points: int, rot = 0.0):
-    tuple[xs, ys: seq[float]] =
+proc starShape(
+    cx, cy, outer, inner: float, points: int, rot = 0.0
+): tuple[xs, ys: seq[float]] =
   for i in 0 ..< points * 2:
     let r = if i mod 2 == 0: outer else: inner
     let a = rot + PI * i.float / points.float - PI / 2
@@ -70,15 +81,24 @@ var scenes: seq[Scene]
 
 # --- hello: the first program in getting started -----------------------------
 
-scenes.add Scene(name: "hello", w: 640, h: 480, frames: 1,
+scenes.add Scene(
+  name: "hello",
+  w: 640,
+  h: 480,
+  frames: 1,
   bg: (89'u8, 157'u8, 220'u8, 255'u8),
   draw: proc(n: Nim2d, t: float, shot: Canvas) =
     n.setColor(255, 120, 60)
-    n.circle(320, 240, 80, true))
+    n.circle(320, 240, 80, true),
+)
 
 # --- hero: the front-page image ----------------------------------------------
 
-scenes.add Scene(name: "hero", w: 760, h: 300, frames: 1,
+scenes.add Scene(
+  name: "hero",
+  w: 760,
+  h: 300,
+  frames: 1,
   bg: (16'u8, 17'u8, 26'u8, 255'u8),
   draw: proc(n: Nim2d, t: float, shot: Canvas) =
     var dots = newRng(7)
@@ -95,16 +115,22 @@ scenes.add Scene(name: "hero", w: 760, h: 300, frames: 1,
     let star = starShape(540, 230, 44, 18, 5, rot = 0.2)
     n.setColor(gold)
     n.polygon(star.xs, star.ys, true)
-    let curve = newBezierCurve(@[(40.0, 260.0), (240.0, 140.0), (430.0, 300.0), (700.0, 60.0)])
+    let curve =
+      newBezierCurve(@[(40.0, 260.0), (240.0, 140.0), (430.0, 300.0), (700.0, 60.0)])
     n.setColor(teal.withAlpha(180))
     n.line(curve.render(60), 4)
     n.withFont(heroFont):
       n.setColor(235, 240, 255)
-      n.print("nim2d", 44, 88))
+      n.print("nim2d", 44, 88),
+)
 
 # --- shapes -------------------------------------------------------------------
 
-scenes.add Scene(name: "shapes", w: 560, h: 360, frames: 1,
+scenes.add Scene(
+  name: "shapes",
+  w: 560,
+  h: 360,
+  frames: 1,
   bg: (24'u8, 26'u8, 38'u8, 255'u8),
   draw: proc(n: Nim2d, t: float, shot: Canvas) =
     n.setColor(sky)
@@ -127,19 +153,39 @@ scenes.add Scene(name: "shapes", w: 560, h: 360, frames: 1,
     n.setColor(235, 240, 255)
     for gy in 0 .. 3:
       for gx in 0 .. 4:
-        n.points([(470.0 + gx.float * 18, 230.0 + gy.float * 18)], 4))
+        n.points([(470.0 + gx.float * 18, 230.0 + gy.float * 18)], 4),
+)
 
 # --- colors: the named palette -------------------------------------------------
 
-scenes.add Scene(name: "colors", w: 560, h: 250, frames: 1,
+scenes.add Scene(
+  name: "colors",
+  w: 560,
+  h: 250,
+  frames: 1,
   bg: (24'u8, 26'u8, 38'u8, 255'u8),
   draw: proc(n: Nim2d, t: float, shot: Canvas) =
-    let named: seq[(string, Color)] = @[
-      ("red", red), ("orange", orange), ("yellow", yellow), ("lime", lime),
-      ("green", green), ("teal", teal), ("cyan", cyan), ("sky", sky),
-      ("blue", blue), ("navy", navy), ("purple", purple), ("magenta", magenta),
-      ("pink", pink), ("brown", brown), ("gold", gold), ("white", white),
-      ("lightgray", lightgray), ("darkgray", darkgray)]
+    let named: seq[(string, Color)] =
+      @[
+        ("red", red),
+        ("orange", orange),
+        ("yellow", yellow),
+        ("lime", lime),
+        ("green", green),
+        ("teal", teal),
+        ("cyan", cyan),
+        ("sky", sky),
+        ("blue", blue),
+        ("navy", navy),
+        ("purple", purple),
+        ("magenta", magenta),
+        ("pink", pink),
+        ("brown", brown),
+        ("gold", gold),
+        ("white", white),
+        ("lightgray", lightgray),
+        ("darkgray", darkgray),
+      ]
     n.withFont(labelFont):
       for i, (name, c) in named:
         let col = i mod 6
@@ -149,11 +195,16 @@ scenes.add Scene(name: "colors", w: 560, h: 250, frames: 1,
         n.setColor(c)
         n.rectangle(x, y, 76, 42, true, roundness = 8)
         n.setColor(200, 205, 215)
-        n.print(name, x + 2, y + 48))
+        n.print(name, x + 2, y + 48),
+)
 
 # --- transforms ----------------------------------------------------------------
 
-scenes.add Scene(name: "transforms", w: 560, h: 360, frames: 100,
+scenes.add Scene(
+  name: "transforms",
+  w: 560,
+  h: 360,
+  frames: 100,
   bg: (20'u8, 22'u8, 32'u8, 255'u8),
   draw: proc(n: Nim2d, t: float, shot: Canvas) =
     let cx = 280.0
@@ -178,11 +229,16 @@ scenes.add Scene(name: "transforms", w: 560, h: 360, frames: 100,
       n.translate(26, 0)
       n.setColor(lightgray)
       n.circle(0, 0, 5, true)
-      n.pop())
+      n.pop(),
+)
 
 # --- images and quads -----------------------------------------------------------
 
-scenes.add Scene(name: "images", w: 560, h: 260, frames: 1,
+scenes.add Scene(
+  name: "images",
+  w: 560,
+  h: 260,
+  frames: 1,
   bg: (228'u8, 231'u8, 238'u8, 255'u8),
   draw: proc(n: Nim2d, t: float, shot: Canvas) =
     let w = logo.getWidth.float
@@ -203,23 +259,25 @@ scenes.add Scene(name: "images", w: 560, h: 260, frames: 1,
       n.print("draw", 20, 200)
       n.print("rotated", 170, 200)
       n.print("tinted, faded", 320, 200)
-      n.print("a quad", 470, 200))
+      n.print("a quad", 470, 200),
+)
 
 # --- text: TrueType and a bitmap font -------------------------------------------
 
-const digitPatterns = @[
-  @["###", "#.#", "#.#", "#.#", "###"],  # 0
-  @[".#.", "##.", ".#.", ".#.", "###"],  # 1
-  @["###", "..#", "###", "#..", "###"],  # 2
-  @["###", "..#", "###", "..#", "###"],  # 3
-  @["#.#", "#.#", "###", "..#", "..#"],  # 4
-  @["###", "#..", "###", "..#", "###"],  # 5
-  @["###", "#..", "###", "#.#", "###"],  # 6
-  @["###", "..#", "..#", "..#", "..#"],  # 7
-  @["###", "#.#", "###", "#.#", "###"],  # 8
-  @["###", "#.#", "###", "..#", "###"],  # 9
-  @["...", "...", "...", "...", "..."],  # space
-]
+const digitPatterns =
+  @[
+    @["###", "#.#", "#.#", "#.#", "###"], # 0
+    @[".#.", "##.", ".#.", ".#.", "###"], # 1
+    @["###", "..#", "###", "#..", "###"], # 2
+    @["###", "..#", "###", "..#", "###"], # 3
+    @["#.#", "#.#", "###", "..#", "..#"], # 4
+    @["###", "#..", "###", "..#", "###"], # 5
+    @["###", "#..", "###", "#.#", "###"], # 6
+    @["###", "..#", "..#", "..#", "..#"], # 7
+    @["###", "#.#", "###", "#.#", "###"], # 8
+    @["###", "#.#", "###", "..#", "###"], # 9
+    @["...", "...", "...", "...", "..."], # space
+  ]
 
 proc makePixelFont(n: Nim2d): Font =
   ## The same hand-drawn 3x5 digit font the bitmapfont example builds.
@@ -238,7 +296,11 @@ proc makePixelFont(n: Nim2d): Font =
 
 var pixelFont: Font
 
-scenes.add Scene(name: "text", w: 560, h: 300, frames: 1,
+scenes.add Scene(
+  name: "text",
+  w: 560,
+  h: 300,
+  frames: 1,
   bg: (16'u8, 18'u8, 28'u8, 255'u8),
   init: proc(n: Nim2d) =
     pixelFont = makePixelFont(n),
@@ -257,13 +319,18 @@ scenes.add Scene(name: "text", w: 560, h: 300, frames: 1,
       n.setColor(120, 220, 255)
       n.print("8 0 0 8 5", 24, 170, 0, 10, 10)
       n.setColor(255, 170, 90)
-      n.print("0123456789", 24, 246, 0, 5, 5))
+      n.print("0123456789", 24, 246, 0, 5, 5),
+)
 
 # --- particles -------------------------------------------------------------------
 
 var fountain: ParticleSystem
 
-scenes.add Scene(name: "particles", w: 560, h: 360, frames: 110,
+scenes.add Scene(
+  name: "particles",
+  w: 560,
+  h: 360,
+  frames: 110,
   bg: (10'u8, 10'u8, 16'u8, 255'u8),
   init: proc(n: Nim2d) =
     fountain = newParticleSystem()
@@ -281,41 +348,62 @@ scenes.add Scene(name: "particles", w: 560, h: 360, frames: 110,
     if abs(t - 1.55) < dt / 2:
       fountain.setPosition(410, 130)
       fountain.emit(260)
-      fountain.setPosition(280, 330),
+      fountain.setPosition(280, 330)
+  ,
   draw: proc(n: Nim2d, t: float, shot: Canvas) =
     n.withBlend(bmAdd):
-      fountain.draw(n))
+      fountain.draw(n),
+)
 
 # --- meshes ----------------------------------------------------------------------
 
-scenes.add Scene(name: "mesh", w: 560, h: 260, frames: 1,
+scenes.add Scene(
+  name: "mesh",
+  w: 560,
+  h: 260,
+  frames: 1,
   bg: (24'u8, 26'u8, 38'u8, 255'u8),
   draw: proc(n: Nim2d, t: float, shot: Canvas) =
-    let tri = newMesh(@[
-      meshVertex(0, 180, color = (255'u8, 60'u8, 60'u8, 255'u8)),
-      meshVertex(170, 180, color = (60'u8, 220'u8, 90'u8, 255'u8)),
-      meshVertex(85, 20, color = (70'u8, 120'u8, 255'u8, 255'u8))])
+    let tri = newMesh(
+      @[
+        meshVertex(0, 180, color = (255'u8, 60'u8, 60'u8, 255'u8)),
+        meshVertex(170, 180, color = (60'u8, 220'u8, 90'u8, 255'u8)),
+        meshVertex(85, 20, color = (70'u8, 120'u8, 255'u8, 255'u8)),
+      ]
+    )
     tri.draw(n, 30, 30)
-    let strip = newMesh(@[
-      meshVertex(0, 0, color = (255'u8, 210'u8, 90'u8, 255'u8)),
-      meshVertex(0, 160, color = (255'u8, 90'u8, 40'u8, 255'u8)),
-      meshVertex(130, 0, color = (255'u8, 120'u8, 200'u8, 255'u8)),
-      meshVertex(130, 160, color = (120'u8, 60'u8, 220'u8, 255'u8))],
-      mode = mdStrip)
+    let strip = newMesh(
+      @[
+        meshVertex(0, 0, color = (255'u8, 210'u8, 90'u8, 255'u8)),
+        meshVertex(0, 160, color = (255'u8, 90'u8, 40'u8, 255'u8)),
+        meshVertex(130, 0, color = (255'u8, 120'u8, 200'u8, 255'u8)),
+        meshVertex(130, 160, color = (120'u8, 60'u8, 220'u8, 255'u8)),
+      ],
+      mode = mdStrip,
+    )
     strip.draw(n, 250, 40)
-    let textured = newMesh(@[
-      meshVertex(60, 0, 0.5, 0, color = (255'u8, 255'u8, 255'u8, 255'u8)),
-      meshVertex(120, 60, 1, 0.5, color = (120'u8, 200'u8, 255'u8, 255'u8)),
-      meshVertex(60, 120, 0.5, 1, color = (255'u8, 255'u8, 255'u8, 255'u8)),
-      meshVertex(0, 60, 0, 0.5, color = (255'u8, 170'u8, 90'u8, 255'u8))],
-      mode = mdFan, texture = checker)
-    textured.draw(n, 415, 60))
+    let textured = newMesh(
+      @[
+        meshVertex(60, 0, 0.5, 0, color = (255'u8, 255'u8, 255'u8, 255'u8)),
+        meshVertex(120, 60, 1, 0.5, color = (120'u8, 200'u8, 255'u8, 255'u8)),
+        meshVertex(60, 120, 0.5, 1, color = (255'u8, 255'u8, 255'u8, 255'u8)),
+        meshVertex(0, 60, 0, 0.5, color = (255'u8, 170'u8, 90'u8, 255'u8)),
+      ],
+      mode = mdFan,
+      texture = checker,
+    )
+    textured.draw(n, 415, 60),
+)
 
 # --- canvas ----------------------------------------------------------------------
 
 var emblem: Canvas
 
-scenes.add Scene(name: "canvas", w: 560, h: 280, frames: 2,
+scenes.add Scene(
+  name: "canvas",
+  w: 560,
+  h: 280,
+  frames: 2,
   bg: (20'u8, 22'u8, 32'u8, 255'u8),
   init: proc(n: Nim2d) =
     emblem = n.newCanvas(192, 192),
@@ -340,17 +428,24 @@ scenes.add Scene(name: "canvas", w: 560, h: 280, frames: 2,
       let sc = 0.5 + 0.14 * i.float
       emblem.setColorMod(uint8(255 - i * 30), 255, uint8(200 + i * 10))
       emblem.draw(n, x, 140, i.float * 0.3, 0.5 * sc, 0.5 * sc, 96, 96)
-    emblem.setColorMod(255, 255, 255))
+    emblem.setColorMod(255, 255, 255),
+)
 
 # --- stencil and scissor -----------------------------------------------------------
 
-scenes.add Scene(name: "stencil", w: 560, h: 280, frames: 1,
+scenes.add Scene(
+  name: "stencil",
+  w: 560,
+  h: 280,
+  frames: 1,
   bg: (24'u8, 26'u8, 38'u8, 255'u8),
   draw: proc(n: Nim2d, t: float, shot: Canvas) =
     # Left: diagonal stripes clipped to a star-shaped stencil mask.
     let star = starShape(140, 140, 110, 48, 5)
-    n.stencil(proc(n: Nim2d) =
-      n.polygon(star.xs, star.ys, true))
+    n.stencil(
+      proc(n: Nim2d) =
+        n.polygon(star.xs, star.ys, true)
+    )
     for i in 0 .. 16:
       n.setColor(if i mod 2 == 0: orange else: gold)
       n.line(@[(i.float * 36 - 140, 280.0), (i.float * 36, 0.0)], 14)
@@ -364,33 +459,42 @@ scenes.add Scene(name: "stencil", w: 560, h: 280, frames: 1,
       n.circle(425, 140, 130 - i.float * 16, true)
     n.setScissor()
     n.setColor(gray(120))
-    n.rectangle(330, 50, 190, 180, false))
+    n.rectangle(330, 50, 190, 180, false),
+)
 
 # --- noise, triangulation and a bezier curve ---------------------------------------
 
 var noiseImg: Image
 
-scenes.add Scene(name: "noise", w: 560, h: 300, frames: 1,
+scenes.add Scene(
+  name: "noise",
+  w: 560,
+  h: 300,
+  frames: 1,
   bg: (20'u8, 22'u8, 32'u8, 255'u8),
   init: proc(n: Nim2d) =
     let data = newImageData(130, 130)
-    data.mapPixel(proc(x, y: int32, c: Color): Color =
-      let v = noise(x.float * 0.06, y.float * 0.06)
-      let w = noise(x.float * 0.18, y.float * 0.18, 4.0)
-      let m = uint8(clamp((v * 0.75 + w * 0.25) * 255, 0, 255))
-      (uint8(m.float * 0.4), uint8(m.float * 0.75), m, 255'u8))
+    data.mapPixel(
+      proc(x, y: int32, c: Color): Color =
+        let v = noise(x.float * 0.06, y.float * 0.06)
+        let w = noise(x.float * 0.18, y.float * 0.18, 4.0)
+        let m = uint8(clamp((v * 0.75 + w * 0.25) * 255, 0, 255))
+        (uint8(m.float * 0.4), uint8(m.float * 0.75), m, 255'u8)
+    )
     noiseImg = n.newImage(data),
   draw: proc(n: Nim2d, t: float, shot: Canvas) =
     noiseImg.draw(n, 20, 20, 0, 2, 2)
     let star = starShape(390, 100, 70, 28, 7, rot = 0.3)
     n.setColor(gold)
     n.polygon(star.xs, star.ys, true)
-    let curve = newBezierCurve(@[(310.0, 270.0), (390.0, 150.0), (470.0, 290.0), (540.0, 180.0)])
+    let curve =
+      newBezierCurve(@[(310.0, 270.0), (390.0, 150.0), (470.0, 290.0), (540.0, 180.0)])
     n.setColor(cyan)
     n.line(curve.render(50), 4)
     n.setColor(lightgray)
     for p in curve.points:
-      n.circle(p.x, p.y, 4, true))
+      n.circle(p.x, p.y, 4, true),
+)
 
 # --- a user shader ------------------------------------------------------------------
 
@@ -398,7 +502,11 @@ const plasmaSpv = staticRead("../examples/plasma.spv")
 const plasmaMsl = staticRead("../examples/plasma.metal")
 var plasma: Shader
 
-scenes.add Scene(name: "shader", w: 560, h: 320, frames: 80,
+scenes.add Scene(
+  name: "shader",
+  w: 560,
+  h: 320,
+  frames: 80,
   bg: (0'u8, 0'u8, 0'u8, 255'u8),
   init: proc(n: Nim2d) =
     plasma = n.newShader(plasmaSpv, plasmaMsl, uniformFloats = 4),
@@ -407,7 +515,8 @@ scenes.add Scene(name: "shader", w: 560, h: 320, frames: 80,
     n.setShader(plasma)
     n.setColor(255, 255, 255)
     n.rectangle(0, 0, 560, 320, true)
-    n.setShader())
+    n.setShader(),
+)
 
 # --- physics ------------------------------------------------------------------------
 
@@ -416,8 +525,8 @@ var phWorld: World
 var phBoxes: seq[tuple[body: Body, half: float]]
 var phBalls: seq[tuple[body: Body, radius: float]]
 
-var phScene = Scene(name: "physics", w: 560, h: 360, frames: 150,
-  bg: (20'u8, 22'u8, 32'u8, 255'u8))
+var phScene =
+  Scene(name: "physics", w: 560, h: 360, frames: 150, bg: (20'u8, 22'u8, 32'u8, 255'u8))
 phScene.init = proc(n: Nim2d) =
   phWorld = newWorld(0.0, 10.0)
   phBoxes.setLen(0)
@@ -448,8 +557,14 @@ phScene.draw = proc(n: Nim2d, t: float, shot: Canvas) =
     let (x, y) = b.position
     n.transformed(move = vec2(x * PxPerMeter, y * PxPerMeter), angle = b.angle):
       n.setColor(orange)
-      n.rectangle(-half * PxPerMeter, -half * PxPerMeter,
-                  half * 2 * PxPerMeter, half * 2 * PxPerMeter, true, roundness = 3)
+      n.rectangle(
+        -half * PxPerMeter,
+        -half * PxPerMeter,
+        half * 2 * PxPerMeter,
+        half * 2 * PxPerMeter,
+        true,
+        roundness = 3,
+      )
   for (b, radius) in phBalls:
     let (x, y) = b.position
     let r = radius * PxPerMeter
@@ -457,34 +572,57 @@ phScene.draw = proc(n: Nim2d, t: float, shot: Canvas) =
     n.circle(x * PxPerMeter, y * PxPerMeter, r, true)
     n.setColor(navy)
     let a = b.angle
-    n.line(@[(x * PxPerMeter, y * PxPerMeter),
-             (x * PxPerMeter + cos(a) * r, y * PxPerMeter + sin(a) * r)], 2)
+    n.line(
+      @[
+        (x * PxPerMeter, y * PxPerMeter),
+        (x * PxPerMeter + cos(a) * r, y * PxPerMeter + sin(a) * r),
+      ],
+      2,
+    )
 scenes.add phScene
 
 # --- snake and pong, as they look in the examples ------------------------------------
 
-scenes.add Scene(name: "snake", w: 468, h: 356, frames: 1,
+scenes.add Scene(
+  name: "snake",
+  w: 468,
+  h: 356,
+  frames: 1,
   bg: (16'u8, 20'u8, 24'u8, 255'u8),
   draw: proc(n: Nim2d, t: float, shot: Canvas) =
     const Cell = 26.0
     const TopBar = 44.0
     proc cellRect(c: tuple[x, y: int], pad: float) =
-      n.rectangle(c.x.float * Cell + pad, c.y.float * Cell + TopBar + pad,
-                  Cell - pad * 2, Cell - pad * 2, true, 5)
+      n.rectangle(
+        c.x.float * Cell + pad,
+        c.y.float * Cell + TopBar + pad,
+        Cell - pad * 2,
+        Cell - pad * 2,
+        true,
+        5,
+      )
+
     n.setColor(22, 28, 34)
     n.rectangle(0, TopBar, 468, 356 - TopBar, true)
     n.setColor(235, 90, 90)
     cellRect((13, 3), 3)
     let body = [(6, 7), (6, 6), (6, 5), (7, 5), (8, 5), (8, 6), (9, 6), (10, 6)]
     for i, c in body:
-      if i == 0: n.setColor(150, 240, 130)
-      else: n.setColor(90, 200, 110)
+      if i == 0:
+        n.setColor(150, 240, 130)
+      else:
+        n.setColor(90, 200, 110)
       cellRect(c, 2)
     n.withFont(textFont):
       n.setColor(235, 240, 255)
-      n.print("score: 7", 14, 8))
+      n.print("score: 7", 14, 8),
+)
 
-scenes.add Scene(name: "pong", w: 480, h: 300, frames: 1,
+scenes.add Scene(
+  name: "pong",
+  w: 480,
+  h: 300,
+  frames: 1,
   bg: (12'u8, 14'u8, 20'u8, 255'u8),
   draw: proc(n: Nim2d, t: float, shot: Canvas) =
     n.setColor(60, 70, 90)
@@ -501,7 +639,8 @@ scenes.add Scene(name: "pong", w: 480, h: 300, frames: 1,
     n.setColor(255, 150, 120)
     n.rectangle(444, 150, 12, 70, true)
     n.setColor(245, 245, 255)
-    n.rectangle(300, 160, 10, 10, true))
+    n.rectangle(300, 160, 10, 10, true),
+)
 
 # --- starfield -------------------------------------------------------------------------
 
@@ -510,14 +649,15 @@ type Star = object
 
 var stars: seq[Star]
 
-var sfScene = Scene(name: "starfield", w: 560, h: 360, frames: 70,
-  bg: (4'u8, 4'u8, 10'u8, 255'u8))
+var sfScene =
+  Scene(name: "starfield", w: 560, h: 360, frames: 70, bg: (4'u8, 4'u8, 10'u8, 255'u8))
 sfScene.init = proc(n: Nim2d) =
   stars.setLen(0)
   for _ in 0 ..< 300:
     let z = rng.random(1.0, 560.0)
-    stars.add Star(x: rng.random(-560.0, 560.0), y: rng.random(-360.0, 360.0),
-                   z: z, pz: z)
+    stars.add Star(
+      x: rng.random(-560.0, 560.0), y: rng.random(-360.0, 360.0), z: z, pz: z
+    )
 sfScene.tick = proc(n: Nim2d, t, dt: float) =
   for s in stars.mitems:
     s.pz = s.z
@@ -535,6 +675,7 @@ sfScene.draw = proc(n: Nim2d, t: float, shot: Canvas) =
   let focal = 250.0
   proc proj(x, y, z: float): Vec2 =
     (cx + x * focal / z, cy + y * focal / z)
+
   n.setColor(80, 55, 130, 120)
   for k in -5 .. 5:
     let gx = k.float * 0.8
@@ -623,7 +764,8 @@ proc startScene(n: Nim2d) =
   let s = scenes[sceneIdx]
   shotCanvas = n.newCanvas(s.w * 2, s.h * 2)
   drawn = 0
-  if s.init != nil: s.init(n)
+  if s.init != nil:
+    s.init(n)
   echo "rendering ", s.name, " (", s.w, "x", s.h, ", ", s.frames, " frames)"
 
 proc capture(n: Nim2d, s: Scene) =
@@ -648,10 +790,12 @@ n2d.update = proc(n: Nim2d, dt: float) =
       startScene(n)
 
 n2d.draw = proc(n: Nim2d) =
-  if sceneIdx >= scenes.len: return
+  if sceneIdx >= scenes.len:
+    return
   let s = scenes[sceneIdx]
   let t = drawn.float * Dt
-  if s.tick != nil: s.tick(n, t, Dt)
+  if s.tick != nil:
+    s.tick(n, t, Dt)
   n.setCanvas(shotCanvas)
   n.clear(s.bg.r, s.bg.g, s.bg.b)
   n.push()

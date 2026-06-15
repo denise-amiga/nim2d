@@ -8,14 +8,16 @@ const
   W = 800
   H = 640
 
-let n2d = newNim2d("nim2d - transforms", 130, 80, W.cint, H.cint, (16'u8, 18'u8, 26'u8, 255'u8))
+let n2d =
+  newNim2d("nim2d - transforms", 130, 80, W.cint, H.cint, (16'u8, 18'u8, 26'u8, 255'u8))
 let font = newFont(getAppDir() / "font.ttf", 22)
 n2d.setFont(font)
 
 var t = 0.0
 
 n2d.keydown = proc(nim2d: Nim2d, scancode: Key) =
-  if scancode == Key.escape: nim2d.running = false
+  if scancode == Key.escape:
+    nim2d.running = false
 
 n2d.update = proc(nim2d: Nim2d, dt: float) =
   t += dt

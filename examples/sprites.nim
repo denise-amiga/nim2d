@@ -9,7 +9,8 @@ const
   W = 900
   H = 680
 
-let n2d = newNim2d("nim2d - sprites", 120, 70, W.cint, H.cint, (16'u8, 18'u8, 24'u8, 255'u8))
+let n2d =
+  newNim2d("nim2d - sprites", 120, 70, W.cint, H.cint, (16'u8, 18'u8, 24'u8, 255'u8))
 let font = newFont(getAppDir() / "font.ttf", 22)
 let logo = newImage(n2d, getAppDir() / "Nim-logo.png")
 n2d.setFont(font)
@@ -18,9 +19,14 @@ let batch = newSpriteBatch(logo)
 let (lw, lh) = logo.getDimensions
 
 # A gradient disc: a white center vertex surrounded by colored rim vertices.
-let cols = [(255'u8, 80'u8, 80'u8, 255'u8), (255'u8, 200'u8, 80'u8, 255'u8),
-            (80'u8, 255'u8, 120'u8, 255'u8), (80'u8, 200'u8, 255'u8, 255'u8),
-            (180'u8, 120'u8, 255'u8, 255'u8), (255'u8, 80'u8, 80'u8, 255'u8)]
+let cols = [
+  (255'u8, 80'u8, 80'u8, 255'u8),
+  (255'u8, 200'u8, 80'u8, 255'u8),
+  (80'u8, 255'u8, 120'u8, 255'u8),
+  (80'u8, 200'u8, 255'u8, 255'u8),
+  (180'u8, 120'u8, 255'u8, 255'u8),
+  (255'u8, 80'u8, 80'u8, 255'u8),
+]
 var mverts = @[meshVertex(0, 0)]
 for i in 0 .. 5:
   let a = i.float / 5 * TAU
@@ -28,13 +34,15 @@ for i in 0 .. 5:
 let fan = newMesh(mverts, mdFan)
 
 # A quad that crops the middle half of the logo.
-let crop = newQuad(lw.float * 0.25, lh.float * 0.25, lw.float * 0.5, lh.float * 0.5,
-                   lw.float, lh.float)
+let crop = newQuad(
+  lw.float * 0.25, lh.float * 0.25, lw.float * 0.5, lh.float * 0.5, lw.float, lh.float
+)
 
 var t = 0.0
 
 n2d.keydown = proc(nim2d: Nim2d, sc: Key) =
-  if sc == Key.escape: nim2d.running = false
+  if sc == Key.escape:
+    nim2d.running = false
 
 n2d.update = proc(nim2d: Nim2d, dt: float) =
   t += dt

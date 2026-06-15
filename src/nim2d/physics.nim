@@ -18,7 +18,9 @@ type
   BodyType* = enum
     ## Static bodies never move (floors, walls), dynamic ones move and collide,
     ## kinematic ones move only by the velocity you set.
-    btStatic, btDynamic, btKinematic
+    btStatic
+    btDynamic
+    btKinematic
 
   World* = ref object
     ## A physics world holding bodies and joints, stepped with `update`.
@@ -49,15 +51,21 @@ proc newBody*(w: World, x, y: float, kind = btDynamic): Body =
   ## Add a body at (x, y). Dynamic bodies move and collide, static ones never
   ## move (floors and walls), kinematic ones move only by the velocity you set.
   var def = b2DefaultBodyDef()
-  def.`type` = case kind
+  def.`type` =
+    case kind
     of btStatic: b2_staticBody
     of btDynamic: b2_dynamicBody
     of btKinematic: b2_kinematicBody
   def.position = b2Vec2(x: x.cfloat, y: y.cfloat)
   Body(id: b2CreateBody(w.id, addr def))
 
-proc addBox*(b: Body, halfWidth, halfHeight: float,
-             density = 1.0, friction = 0.6, restitution = 0.0) =
+proc addBox*(
+    b: Body,
+    halfWidth, halfHeight: float,
+    density = 1.0,
+    friction = 0.6,
+    restitution = 0.0,
+) =
   ## Give the body a rectangular shape, sized by its half extents.
   var sd = b2DefaultShapeDef()
   sd.density = density.cfloat
@@ -67,8 +75,9 @@ proc addBox*(b: Body, halfWidth, halfHeight: float,
   var poly = b2MakeBox(halfWidth.cfloat, halfHeight.cfloat)
   discard b2CreatePolygonShape(b.id, addr sd, addr poly)
 
-proc addCircle*(b: Body, radius: float,
-                density = 1.0, friction = 0.6, restitution = 0.0) =
+proc addCircle*(
+    b: Body, radius: float, density = 1.0, friction = 0.6, restitution = 0.0
+) =
   ## Give the body a circular shape.
   var sd = b2DefaultShapeDef()
   sd.density = density.cfloat
@@ -132,13 +141,22 @@ proc destroy*(j: Joint) =
   ## Remove a joint.
   b2DestroyJoint(j.id)
 
-proc revoluteJoint*(w: World, a, b: Body, x, y: float,
-                    enableMotor = false, motorSpeed = 0.0, maxMotorTorque = 0.0,
-                    enableLimit = false, lowerAngle = 0.0, upperAngle = 0.0): Joint =
+proc revoluteJoint*(
+    w: World,
+    a, b: Body,
+    x, y: float,
+    enableMotor = false,
+    motorSpeed = 0.0,
+    maxMotorTorque = 0.0,
+    enableLimit = false,
+    lowerAngle = 0.0,
+    upperAngle = 0.0,
+): Joint =
   ## A hinge pinning two bodies at the world point (x, y), with an optional motor
   ## and angle limits.
   var def = b2DefaultRevoluteJointDef()
-  def.bodyIdA = a.id; def.bodyIdB = b.id
+  def.bodyIdA = a.id
+  def.bodyIdB = b.id
   def.localAnchorA = b2Body_GetLocalPoint(a.id, b2Vec2(x: x.cfloat, y: y.cfloat))
   def.localAnchorB = b2Body_GetLocalPoint(b.id, b2Vec2(x: x.cfloat, y: y.cfloat))
   def.enableMotor = enableMotor
@@ -149,12 +167,19 @@ proc revoluteJoint*(w: World, a, b: Body, x, y: float,
   def.upperAngle = upperAngle.cfloat
   Joint(id: b2CreateRevoluteJoint(w.id, addr def))
 
-proc distanceJoint*(w: World, a, b: Body, x1, y1, x2, y2: float,
-                    enableSpring = false, hertz = 0.0, dampingRatio = 0.0): Joint =
+proc distanceJoint*(
+    w: World,
+    a, b: Body,
+    x1, y1, x2, y2: float,
+    enableSpring = false,
+    hertz = 0.0,
+    dampingRatio = 0.0,
+): Joint =
   ## A rod or spring holding two world anchor points a fixed distance apart. With
   ## a spring it stretches; without one it stays rigid.
   var def = b2DefaultDistanceJointDef()
-  def.bodyIdA = a.id; def.bodyIdB = b.id
+  def.bodyIdA = a.id
+  def.bodyIdB = b.id
   def.localAnchorA = b2Body_GetLocalPoint(a.id, b2Vec2(x: x1.cfloat, y: y1.cfloat))
   def.localAnchorB = b2Body_GetLocalPoint(b.id, b2Vec2(x: x2.cfloat, y: y2.cfloat))
   def.length = hypot(x2 - x1, y2 - y1).cfloat
@@ -163,13 +188,22 @@ proc distanceJoint*(w: World, a, b: Body, x1, y1, x2, y2: float,
   def.dampingRatio = dampingRatio.cfloat
   Joint(id: b2CreateDistanceJoint(w.id, addr def))
 
-proc prismaticJoint*(w: World, a, b: Body, x, y, axisX, axisY: float,
-                     enableMotor = false, motorSpeed = 0.0, maxMotorForce = 0.0,
-                     enableLimit = false, lowerTranslation = 0.0, upperTranslation = 0.0): Joint =
+proc prismaticJoint*(
+    w: World,
+    a, b: Body,
+    x, y, axisX, axisY: float,
+    enableMotor = false,
+    motorSpeed = 0.0,
+    maxMotorForce = 0.0,
+    enableLimit = false,
+    lowerTranslation = 0.0,
+    upperTranslation = 0.0,
+): Joint =
   ## A slider letting two bodies move only along the axis (axisX, axisY), with an
   ## optional motor and travel limits.
   var def = b2DefaultPrismaticJointDef()
-  def.bodyIdA = a.id; def.bodyIdB = b.id
+  def.bodyIdA = a.id
+  def.bodyIdB = b.id
   def.localAnchorA = b2Body_GetLocalPoint(a.id, b2Vec2(x: x.cfloat, y: y.cfloat))
   def.localAnchorB = b2Body_GetLocalPoint(b.id, b2Vec2(x: x.cfloat, y: y.cfloat))
   def.localAxisA = b2Vec2(x: axisX.cfloat, y: axisY.cfloat)
@@ -184,16 +218,24 @@ proc prismaticJoint*(w: World, a, b: Body, x, y, axisX, axisY: float,
 proc weldJoint*(w: World, a, b: Body, x, y: float): Joint =
   ## Welds two bodies rigidly together at the world point (x, y).
   var def = b2DefaultWeldJointDef()
-  def.bodyIdA = a.id; def.bodyIdB = b.id
+  def.bodyIdA = a.id
+  def.bodyIdB = b.id
   def.localAnchorA = b2Body_GetLocalPoint(a.id, b2Vec2(x: x.cfloat, y: y.cfloat))
   def.localAnchorB = b2Body_GetLocalPoint(b.id, b2Vec2(x: x.cfloat, y: y.cfloat))
   Joint(id: b2CreateWeldJoint(w.id, addr def))
 
-proc wheelJoint*(w: World, a, b: Body, x, y, axisX, axisY: float,
-                 enableMotor = false, motorSpeed = 0.0, maxMotorTorque = 0.0): Joint =
+proc wheelJoint*(
+    w: World,
+    a, b: Body,
+    x, y, axisX, axisY: float,
+    enableMotor = false,
+    motorSpeed = 0.0,
+    maxMotorTorque = 0.0,
+): Joint =
   ## A wheel: a suspension spring along the axis plus a spinning motor, for cars.
   var def = b2DefaultWheelJointDef()
-  def.bodyIdA = a.id; def.bodyIdB = b.id
+  def.bodyIdA = a.id
+  def.bodyIdB = b.id
   def.localAnchorA = b2Body_GetLocalPoint(a.id, b2Vec2(x: x.cfloat, y: y.cfloat))
   def.localAnchorB = b2Body_GetLocalPoint(b.id, b2Vec2(x: x.cfloat, y: y.cfloat))
   def.localAxisA = b2Vec2(x: axisX.cfloat, y: axisY.cfloat)
@@ -202,11 +244,14 @@ proc wheelJoint*(w: World, a, b: Body, x, y, axisX, axisY: float,
   def.maxMotorTorque = maxMotorTorque.cfloat
   Joint(id: b2CreateWheelJoint(w.id, addr def))
 
-proc motorJoint*(w: World, a, b: Body, offsetX, offsetY, maxForce, maxTorque: float): Joint =
+proc motorJoint*(
+    w: World, a, b: Body, offsetX, offsetY, maxForce, maxTorque: float
+): Joint =
   ## Drives one body to a position and angle offset from another, like a top-down
   ## character controller pushed around without fighting the solver.
   var def = b2DefaultMotorJointDef()
-  def.bodyIdA = a.id; def.bodyIdB = b.id
+  def.bodyIdA = a.id
+  def.bodyIdB = b.id
   def.linearOffset = b2Vec2(x: offsetX.cfloat, y: offsetY.cfloat)
   def.maxForce = maxForce.cfloat
   def.maxTorque = maxTorque.cfloat
@@ -227,22 +272,31 @@ proc setMotorSpeed*(j: Joint, speed: float) =
 
 # --- raycasts and queries ---------------------------------------------------
 
-type RayHit* = object
-  ## What `raycast` reports about the closest body along the ray.
-  hit*: bool                  ## whether the ray struck anything
-  body*: Body                 ## the body it struck (only when `hit`)
-  x*, y*: float               ## the point of impact
-  nx*, ny*: float             ## the surface normal there
-  fraction*: float            ## how far along the ray, 0 at the start, 1 at the end
+type RayHit* = object ## What `raycast` reports about the closest body along the ray.
+  hit*: bool ## whether the ray struck anything
+  body*: Body ## the body it struck (only when `hit`)
+  x*, y*: float ## the point of impact
+  nx*, ny*: float ## the surface normal there
+  fraction*: float ## how far along the ray, 0 at the start, 1 at the end
 
 proc raycast*(w: World, x1, y1, x2, y2: float): RayHit =
   ## Cast a ray from (x1, y1) to (x2, y2) and return the closest body it hits.
-  let r = b2World_CastRayClosest(w.id, b2Vec2(x: x1.cfloat, y: y1.cfloat),
-    b2Vec2(x: (x2 - x1).cfloat, y: (y2 - y1).cfloat), b2DefaultQueryFilter())
+  let r = b2World_CastRayClosest(
+    w.id,
+    b2Vec2(x: x1.cfloat, y: y1.cfloat),
+    b2Vec2(x: (x2 - x1).cfloat, y: (y2 - y1).cfloat),
+    b2DefaultQueryFilter(),
+  )
   if r.hit:
-    RayHit(hit: true, body: Body(id: b2Shape_GetBody(r.shapeId)),
-           x: r.point.x.float, y: r.point.y.float,
-           nx: r.normal.x.float, ny: r.normal.y.float, fraction: r.fraction.float)
+    RayHit(
+      hit: true,
+      body: Body(id: b2Shape_GetBody(r.shapeId)),
+      x: r.point.x.float,
+      y: r.point.y.float,
+      nx: r.normal.x.float,
+      ny: r.normal.y.float,
+      fraction: r.fraction.float,
+    )
   else:
     RayHit(hit: false)
 
@@ -253,9 +307,12 @@ proc collectShape(shapeId: b2ShapeId, ctx: pointer): bool {.cdecl.} =
 proc queryBox*(w: World, x, y, width, height: float): seq[Body] =
   ## Every body whose shapes overlap the box (x, y, width, height).
   result = @[]
-  let aabb = b2AABB(lowerBound: b2Vec2(x: x.cfloat, y: y.cfloat),
-                    upperBound: b2Vec2(x: (x + width).cfloat, y: (y + height).cfloat))
-  discard b2World_OverlapAABB(w.id, aabb, b2DefaultQueryFilter(), collectShape, addr result)
+  let aabb = b2AABB(
+    lowerBound: b2Vec2(x: x.cfloat, y: y.cfloat),
+    upperBound: b2Vec2(x: (x + width).cfloat, y: (y + height).cfloat),
+  )
+  discard
+    b2World_OverlapAABB(w.id, aabb, b2DefaultQueryFilter(), collectShape, addr result)
 
 # --- contact events ---------------------------------------------------------
 
@@ -271,8 +328,10 @@ proc beginContacts*(w: World): seq[Contact] =
   if ev.beginEvents != nil:
     let arr = cast[ptr UncheckedArray[b2ContactBeginTouchEvent]](ev.beginEvents)
     for i in 0 ..< ev.beginCount.int:
-      result.add Contact(a: Body(id: b2Shape_GetBody(arr[i].shapeIdA)),
-                         b: Body(id: b2Shape_GetBody(arr[i].shapeIdB)))
+      result.add Contact(
+        a: Body(id: b2Shape_GetBody(arr[i].shapeIdA)),
+        b: Body(id: b2Shape_GetBody(arr[i].shapeIdB)),
+      )
 
 proc endContacts*(w: World): seq[Contact] =
   ## Pairs of bodies that stopped touching during the last `update`.
@@ -281,5 +340,7 @@ proc endContacts*(w: World): seq[Contact] =
   if ev.endEvents != nil:
     let arr = cast[ptr UncheckedArray[b2ContactEndTouchEvent]](ev.endEvents)
     for i in 0 ..< ev.endCount.int:
-      result.add Contact(a: Body(id: b2Shape_GetBody(arr[i].shapeIdA)),
-                         b: Body(id: b2Shape_GetBody(arr[i].shapeIdB)))
+      result.add Contact(
+        a: Body(id: b2Shape_GetBody(arr[i].shapeIdA)),
+        b: Body(id: b2Shape_GetBody(arr[i].shapeIdB)),
+      )

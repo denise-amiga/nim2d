@@ -11,7 +11,8 @@ const
   W = 720
   H = 480
 
-let n2d = newNim2d("nim2d - audio", 140, 90, W.cint, H.cint, (16'u8, 18'u8, 28'u8, 255'u8))
+let n2d =
+  newNim2d("nim2d - audio", 140, 90, W.cint, H.cint, (16'u8, 18'u8, 28'u8, 255'u8))
 let font = newFont(getAppDir() / "font.ttf", 20)
 n2d.setFont(font)
 
@@ -29,12 +30,16 @@ n2d.load = proc(nim2d: Nim2d) =
 
 n2d.keydown = proc(nim2d: Nim2d, sc: Key) =
   case sc
-  of Key.escape: nim2d.running = false
+  of Key.escape:
+    nim2d.running = false
   of Key.space:
     blip.setPosition(pan, 0)
     blip.play()
   of Key.p:
-    if music.isPaused: music.resume() else: music.pause()
+    if music.isPaused:
+      music.resume()
+    else:
+      music.pause()
   of Key.up:
     master = min(1.5, master + 0.1)
     nim2d.setVolume(master)
@@ -55,18 +60,32 @@ n2d.keydown = proc(nim2d: Nim2d, sc: Key) =
   of Key.rightBracket:
     pitch = min(2.0, pitch + 0.1)
     music.setPitch(pitch)
-  else: discard
+  else:
+    discard
 
 n2d.draw = proc(nim2d: Nim2d) =
   nim2d.setColor(240, 240, 250)
-  nim2d.print("audio: " & (if nim2d.audioAvailable: "on" else: "off (no device)"), 16, 16)
+  nim2d.print(
+    "audio: " & (if nim2d.audioAvailable: "on" else: "off (no device)"), 16, 16
+  )
   nim2d.setColor(150, 160, 180)
-  nim2d.print("SPACE sfx   P pause music   up/down volume   left/right pan   [ ] pitch", 16, 44)
+  nim2d.print(
+    "SPACE sfx   P pause music   up/down volume   left/right pan   [ ] pitch", 16, 44
+  )
   nim2d.setColor(200, 220, 255)
   nim2d.print("master volume: " & formatFloat(master, ffDecimal, 2), 16, 90)
-  nim2d.print("music playing: " & $music.isPlaying() & "   pitch: " & formatFloat(pitch, ffDecimal, 2), 16, 118)
-  nim2d.print("music position: " & formatFloat(music.tell, ffDecimal, 1) & " / " &
-              formatFloat(music.duration, ffDecimal, 1) & " s", 16, 146)
+  nim2d.print(
+    "music playing: " & $music.isPlaying() & "   pitch: " &
+      formatFloat(pitch, ffDecimal, 2),
+    16,
+    118,
+  )
+  nim2d.print(
+    "music position: " & formatFloat(music.tell, ffDecimal, 1) & " / " &
+      formatFloat(music.duration, ffDecimal, 1) & " s",
+    16,
+    146,
+  )
   nim2d.print("sfx pan: " & formatFloat(pan, ffDecimal, 1), 16, 174)
 
 n2d.play()

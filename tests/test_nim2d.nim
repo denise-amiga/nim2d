@@ -8,7 +8,8 @@ import nim2d/transform
 # closure, so the worker reaches this global rather than capturing anything.
 var threadChan = newChannel[int]()
 proc threadWorker() {.thread.} =
-  for i in 1 .. 5: threadChan.send(i)
+  for i in 1 .. 5:
+    threadChan.send(i)
 
 # These tests run in CI (headless), so they must not create a GPU device /
 # window. We unit-test the pure pieces and compile-check the public API.
@@ -17,8 +18,8 @@ suite "transform":
   test "translate then scale composes correctly":
     let t = identity().translate(10, 20).scale(2, 2)
     let (x, y) = t.apply(5, 5)
-    check x == 20.0'f32   # 5*2 + 10
-    check y == 30.0'f32   # 5*2 + 20
+    check x == 20.0'f32 # 5*2 + 10
+    check y == 30.0'f32 # 5*2 + 20
 
   test "rotate by tau is identity-ish":
     let t = identity().rotate(TAU)
@@ -68,7 +69,8 @@ suite "math (rng / noise / geometry)":
     var r = newRng(7'u64)
     var sum = 0.0
     let n = 20000
-    for _ in 0 ..< n: sum += r.randomNormal(10.0, 2.0)
+    for _ in 0 ..< n:
+      sum += r.randomNormal(10.0, 2.0)
     check abs(sum / n.float - 10.0) < 0.1
 
   test "noise is in [0,1), reproducible and continuous":
@@ -97,7 +99,8 @@ suite "math (rng / noise / geometry)":
     check not isConvex(dart)
     let idx = triangulate(dart)
     check idx.len == (dart.len - 2) * 3
-    for k in idx: check k < uint32(dart.len)
+    for k in idx:
+      check k < uint32(dart.len)
     let square = @[(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
     check isConvex(square)
     check triangulate(square).len == 6
@@ -114,15 +117,16 @@ suite "math (rng / noise / geometry)":
   test "standalone transform maps points":
     let t = newTransform().translate(10.0, 5.0).scale(2.0, 2.0)
     let p = t.transformPoint(3.0, 4.0)
-    check abs(p.x - 16.0) < 1e-9   # 3*2 + 10
-    check abs(p.y - 13.0) < 1e-9   # 4*2 + 5
+    check abs(p.x - 16.0) < 1e-9 # 3*2 + 10
+    check abs(p.y - 13.0) < 1e-9 # 4*2 + 5
 
 suite "imagedata (cpu pixel buffer)":
   test "blank image is zeroed":
     let d = newImageData(4, 4)
     check d.getWidth == 4 and d.getHeight == 4
     check d.pixels.len == 4 * 4 * 4
-    for b in d.pixels: check b == 0'u8
+    for b in d.pixels:
+      check b == 0'u8
 
   test "filled image and pixel round-trip keep RGBA byte order":
     let d = newImageData(2, 2, (10'u8, 20'u8, 30'u8, 40'u8))
@@ -130,20 +134,24 @@ suite "imagedata (cpu pixel buffer)":
     d.setPixel(1, 1, (255'u8, 0'u8, 0'u8, 255'u8))
     check d.getPixel(1, 1) == (255'u8, 0'u8, 0'u8, 255'u8)
     let i = (1 * 2 + 1) * 4
-    check d.pixels[i] == 255'u8      # red byte first
+    check d.pixels[i] == 255'u8 # red byte first
     check d.pixels[i + 1] == 0'u8
 
   test "out-of-range access raises":
     let d = newImageData(2, 2)
-    expect IndexDefect: discard d.getPixel(2, 0)
-    expect IndexDefect: d.setPixel(-1, 0, (0'u8, 0'u8, 0'u8, 0'u8))
+    expect IndexDefect:
+      discard d.getPixel(2, 0)
+    expect IndexDefect:
+      d.setPixel(-1, 0, (0'u8, 0'u8, 0'u8, 0'u8))
 
   test "mapPixel visits every pixel":
     let d = newImageData(3, 3)
     var count = 0
-    d.mapPixel(proc(x, y: int32, c: Color): Color =
-      inc count
-      (uint8(x), uint8(y), 0'u8, 255'u8))
+    d.mapPixel(
+      proc(x, y: int32, c: Color): Color =
+        inc count
+        (uint8(x), uint8(y), 0'u8, 255'u8)
+    )
     check count == 9
     check d.getPixel(2, 1) == (2'u8, 1'u8, 0'u8, 255'u8)
 
@@ -164,7 +172,7 @@ suite "audio (headless helpers)":
   test "listenerRelative offsets a source and flips screen y":
     let r = listenerRelative(10.0, 8.0, 0.0, 4.0, 3.0, 0.0)
     check abs(r.x - 6.0) < 1e-9
-    check abs(r.y - (-5.0)) < 1e-9   # screen y is down, the mixer's y is up
+    check abs(r.y - (-5.0)) < 1e-9 # screen y is down, the mixer's y is up
     check abs(r.z - 0.0) < 1e-9
 
 suite "audio (runtime, only when a device is available)":
@@ -172,7 +180,7 @@ suite "audio (runtime, only when a device is available)":
     var n = Nim2d()
     n.initAudio()
     if not n.audioAvailable():
-      skip()      # no audio device, as on a CI machine
+      skip() # no audio device, as on a CI machine
     else:
       let s = n.newSource("examples/assets/blip.wav", stStatic)
       check s.duration > 0
@@ -181,7 +189,7 @@ suite "audio (runtime, only when a device is available)":
       s.play()
       check s.isPlaying
       n.shutdownAudio()
-      s.play()        # after shutdown these are safe no-ops, not a crash
+      s.play() # after shutdown these are safe no-ops, not a crash
       s.destroy()
       check not s.isPlaying
 
@@ -195,9 +203,10 @@ suite "system (platform queries)":
 suite "thread (background work)":
   test "a worker thread sends values over a channel":
     let t = newThread(threadWorker)
-    t.join()                       # worker has finished; the five values are queued
+    t.join() # worker has finished; the five values are queued
     var total = 0
-    for _ in 0 ..< 5: total += threadChan.receive()
+    for _ in 0 ..< 5:
+      total += threadChan.receive()
     check total == 15
 
 # Compile-only: exercises the full public surface without running the GPU.
@@ -209,10 +218,14 @@ when false:
     let cv = n2d.newCanvas(64, 64)
     let f = newFont("x.ttf", 16)
     n2d.setFont(f)
-    n2d.load = proc(nim2d: Nim2d) = discard
-    n2d.update = proc(nim2d: Nim2d, dt: float) = discard
-    n2d.keydown = proc(nim2d: Nim2d, scancode: SDL_Scancode) = discard
-    n2d.mousemove = proc(nim2d: Nim2d, x, y, dx, dy: float32) = discard
+    n2d.load = proc(nim2d: Nim2d) =
+      discard
+    n2d.update = proc(nim2d: Nim2d, dt: float) =
+      discard
+    n2d.keydown = proc(nim2d: Nim2d, scancode: SDL_Scancode) =
+      discard
+    n2d.mousemove = proc(nim2d: Nim2d, x, y, dx, dy: float32) =
+      discard
     n2d.draw = proc(nim2d: Nim2d) =
       nim2d.setColor(1, 2, 3)
       nim2d.circle(1, 1, 1, true)
@@ -254,11 +267,16 @@ when false:
     discard n2d.isFullscreen()
     n2d.setResizable(true)
     n2d.setSize(640, 480)
-    n2d.minimize(); n2d.maximize(); n2d.restore()
+    n2d.minimize()
+    n2d.maximize()
+    n2d.restore()
     discard getDesktopDimensions()
     n2d.setIcon(newImageData(16, 16))
     n2d.showMessageBox("hi", "there")
     # system
-    discard getOS(); discard getProcessorCount(); discard getPowerInfo()
+    discard getOS()
+    discard getProcessorCount()
+    discard getPowerInfo()
     n2d.play()
+
   demo()

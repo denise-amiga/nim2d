@@ -8,7 +8,8 @@ const
   W = 640
   H = 480
 
-let n2d = newNim2d("nim2d - filesystem", 140, 90, W.cint, H.cint, (20'u8, 22'u8, 30'u8, 255'u8))
+let n2d =
+  newNim2d("nim2d - filesystem", 140, 90, W.cint, H.cint, (20'u8, 22'u8, 30'u8, 255'u8))
 let font = newFont(getAppDir() / "font.ttf", 20)
 n2d.setFont(font)
 
@@ -20,8 +21,10 @@ proc loadScores(): seq[int] =
     for line in n2d.fs.lines("scores.txt"):
       let s = line.strip
       if s.len > 0:
-        try: result.add parseInt(s)
-        except ValueError: discard
+        try:
+          result.add parseInt(s)
+        except ValueError:
+          discard
   result.sort(SortOrder.Descending)
 
 var scores = loadScores()
@@ -41,7 +44,8 @@ n2d.draw = proc(nim2d: Nim2d) =
   nim2d.setColor(255, 220, 120)
   var y = 90.0
   for i, s in scores:
-    if i >= 10: break
+    if i >= 10:
+      break
     nim2d.print($(i + 1) & ".   " & $s, 40, y)
     y += 28
 

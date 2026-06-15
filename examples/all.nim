@@ -41,7 +41,7 @@ n2d.draw = proc(nim2d: Nim2d) =
   nim2d.setColor(20, 20, 30)
   nim2d.setFont(font)
   nim2d.print("canvas", 80, 80)
-  nim2d.setCanvas()  # back to the screen
+  nim2d.setCanvas() # back to the screen
 
   # --- shapes ---
   nim2d.setColor(255, 90, 90)

@@ -101,7 +101,8 @@ proc keyScancode*(key: Key): SDL_Scancode =
 proc isKeyDown*(scancode: SDL_Scancode): bool =
   ## Whether a physical key is currently held down, by SDL scancode.
   let state = cast[ptr UncheckedArray[bool]](SDL_GetKeyboardState(nil))
-  if state == nil: return false
+  if state == nil:
+    return false
   state[ord(scancode)]
 
 proc isDown*(key: Key): bool =

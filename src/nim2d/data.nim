@@ -21,11 +21,16 @@ import nimcrypto/sha2
 type
   HashFunction* = enum
     ## The supported message-digest algorithms.
-    hfMD5, hfSHA1, hfSHA256, hfSHA512
+    hfMD5
+    hfSHA1
+    hfSHA256
+    hfSHA512
 
   CompressFormat* = enum
     ## The compressed container formats: zlib, gzip and raw deflate.
-    compZlib, compGzip, compDeflate
+    compZlib
+    compGzip
+    compDeflate
 
 # --- byte / string helpers -------------------------------------------------
 
@@ -45,10 +50,14 @@ const hexDigits = "0123456789abcdef"
 
 func hexValue(c: char): int =
   case c
-  of '0'..'9': ord(c) - ord('0')
-  of 'a'..'f': ord(c) - ord('a') + 10
-  of 'A'..'F': ord(c) - ord('A') + 10
-  else: raise newException(ValueError, "hex: invalid digit '" & c & "'")
+  of '0' .. '9':
+    ord(c) - ord('0')
+  of 'a' .. 'f':
+    ord(c) - ord('a') + 10
+  of 'A' .. 'F':
+    ord(c) - ord('A') + 10
+  else:
+    raise newException(ValueError, "hex: invalid digit '" & c & "'")
 
 proc hexEncode(data: openArray[byte]): string =
   result = newStringOfCap(data.len * 2)
@@ -69,19 +78,31 @@ proc hexDecode(s: string): seq[byte] =
 
 proc encode*(data: openArray[byte], hex = false): string =
   ## Encode raw bytes as base64, or as lowercase hex when `hex` is true.
-  if hex: hexEncode(data) else: base64.encode(data)
+  if hex:
+    hexEncode(data)
+  else:
+    base64.encode(data)
 
 proc encode*(s: string, hex = false): string =
   ## Encode a string's bytes as base64, or as hex when `hex` is true.
-  if hex: hexEncode(s.toOpenArrayByte(0, s.high)) else: base64.encode(s)
+  if hex:
+    hexEncode(s.toOpenArrayByte(0, s.high))
+  else:
+    base64.encode(s)
 
 proc decode*(s: string, hex = false): seq[byte] =
   ## Decode a base64 (or hex) string back to raw bytes.
-  if hex: hexDecode(s) else: toBytes(base64.decode(s))
+  if hex:
+    hexDecode(s)
+  else:
+    toBytes(base64.decode(s))
 
 proc decodeString*(s: string, hex = false): string =
   ## Decode base64 or hex to a string, for when the payload is known text.
-  if hex: toString(hexDecode(s)) else: base64.decode(s)
+  if hex:
+    toString(hexDecode(s))
+  else:
+    base64.decode(s)
 
 # --- hashing ---------------------------------------------------------------
 
@@ -93,7 +114,8 @@ proc digestRaw*(fn: HashFunction, data: openArray[byte]): seq[byte] =
     let d = toMD5(toString(data))
     {.pop.}
     result = newSeq[byte](16)
-    for i in 0 .. 15: result[i] = d[i]
+    for i in 0 .. 15:
+      result[i] = d[i]
   of hfSHA1:
     result = @(sha1.digest(data).data)
   of hfSHA256:
@@ -157,9 +179,12 @@ proc pack*(format: string, args: varargs[int64]): seq[byte] =
   var argi = 0
   for ch in format:
     case ch
-    of ' ': discard
-    of '<', '=': little = true
-    of '>': little = false
+    of ' ':
+      discard
+    of '<', '=':
+      little = true
+    of '>':
+      little = false
     of 'b', 'B', 'h', 'H', 'i', 'I', 'l', 'L':
       let size = codeSize(ch)
       if argi >= args.len:
@@ -182,9 +207,12 @@ proc unpack*(format: string, data: openArray[byte]): seq[int64] =
   var pos = 0
   for ch in format:
     case ch
-    of ' ': discard
-    of '<', '=': little = true
-    of '>': little = false
+    of ' ':
+      discard
+    of '<', '=':
+      little = true
+    of '>':
+      little = false
     of 'b', 'B', 'h', 'H', 'i', 'I', 'l', 'L':
       let size = codeSize(ch)
       let signed = ch in {'b', 'h', 'i', 'l'}
@@ -192,7 +220,11 @@ proc unpack*(format: string, data: openArray[byte]): seq[int64] =
         raise newException(ValueError, "unpack: data too short for format")
       var v: uint64 = 0
       for k in 0 ..< size:
-        let b = if little: data[pos + k] else: data[pos + size - 1 - k]
+        let b =
+          if little:
+            data[pos + k]
+          else:
+            data[pos + size - 1 - k]
         v = v or (uint64(b) shl (k * 8))
       pos += size
       if signed and size < 8:

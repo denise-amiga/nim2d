@@ -7,7 +7,8 @@ const
   W = 560
   H = 560
 
-let n2d = newNim2d("nim2d - clock", 200, 120, W.cint, H.cint, (24'u8, 26'u8, 34'u8, 255'u8))
+let n2d =
+  newNim2d("nim2d - clock", 200, 120, W.cint, H.cint, (24'u8, 26'u8, 34'u8, 255'u8))
 let font = newFont(getAppDir() / "font.ttf", 28)
 n2d.setFont(font)
 
@@ -16,7 +17,8 @@ let cy = H / 2
 let R = 240.0
 
 n2d.keydown = proc(nim2d: Nim2d, scancode: Key) =
-  if scancode == Key.escape: nim2d.running = false
+  if scancode == Key.escape:
+    nim2d.running = false
 
 proc hand(nim2d: Nim2d, frac, len, width: float, col: Color) =
   ## `frac` is 0..1 around the dial (0 = 12 o'clock, clockwise).
@@ -35,11 +37,17 @@ n2d.draw = proc(nim2d: Nim2d) =
   for i in 0 ..< 60:
     let a = i.float / 60.0 * TAU
     let inner = (if i mod 5 == 0: R - 24 else: R - 12)
-    if i mod 5 == 0: nim2d.setColor(220, 225, 235)
-    else: nim2d.setColor(90, 96, 110)
-    nim2d.line(@[(cx + cos(a) * inner, cy + sin(a) * inner),
-                 (cx + cos(a) * (R - 4), cy + sin(a) * (R - 4))],
-               (if i mod 5 == 0: 3.0 else: 1.5))
+    if i mod 5 == 0:
+      nim2d.setColor(220, 225, 235)
+    else:
+      nim2d.setColor(90, 96, 110)
+    nim2d.line(
+      @[
+        (cx + cos(a) * inner, cy + sin(a) * inner),
+        (cx + cos(a) * (R - 4), cy + sin(a) * (R - 4)),
+      ],
+      (if i mod 5 == 0: 3.0 else: 1.5),
+    )
 
   let t = now()
   let sec = t.second.float + t.nanosecond.float / 1_000_000_000.0

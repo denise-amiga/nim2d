@@ -13,18 +13,18 @@ import backend/sdl
 import backend/sdlimage
 import backend/renderer
 
-type
-  ImageData* = ref object
-    ## A CPU pixel buffer in RGBA8 you can read and write one pixel at a time,
-    ## then upload to a drawable image.
-    pixels*: seq[uint8]
-    width*: int32
-    height*: int32
+type ImageData* = ref object
+  ## A CPU pixel buffer in RGBA8 you can read and write one pixel at a time,
+  ## then upload to a drawable image.
+  pixels*: seq[uint8]
+  width*: int32
+  height*: int32
 
 proc newImageData*(width, height: int32): ImageData =
   ## Create a blank (fully transparent) ImageData of the given size.
-  ImageData(width: width, height: height,
-            pixels: newSeq[uint8](width.int * height.int * 4))
+  ImageData(
+    width: width, height: height, pixels: newSeq[uint8](width.int * height.int * 4)
+  )
 
 proc newImageData*(width, height: int32, fill: Color): ImageData =
   ## Create an ImageData filled with a single color.
@@ -41,7 +41,9 @@ proc newImageData*(filename: string): ImageData =
   ## Load an image file into a CPU pixel buffer, converting to RGBA8 if needed.
   var surf = IMG_Load(filename.cstring)
   if surf == nil:
-    raise newException(IOError, "could not load image '" & filename & "': " & $SDL_GetError())
+    raise newException(
+      IOError, "could not load image '" & filename & "': " & $SDL_GetError()
+    )
   if surf.format != SDL_PIXELFORMAT_RGBA32:
     let conv = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_RGBA32)
     SDL_DestroySurface(surf)
@@ -104,10 +106,16 @@ proc encode*(d: ImageData, filename: string) =
   ## Save the pixel buffer to a PNG file. Raises IOError on failure.
   if d.width <= 0 or d.height <= 0:
     raise newException(IOError, "encode: cannot save an empty image")
-  let surf = SDL_CreateSurfaceFrom(d.width.cint, d.height.cint,
-    SDL_PIXELFORMAT_RGBA32, addr d.pixels[0], (d.width.int * 4).cint)
+  let surf = SDL_CreateSurfaceFrom(
+    d.width.cint,
+    d.height.cint,
+    SDL_PIXELFORMAT_RGBA32,
+    addr d.pixels[0],
+    (d.width.int * 4).cint,
+  )
   if surf == nil:
-    raise newException(IOError, "encode: SDL_CreateSurfaceFrom failed: " & $SDL_GetError())
+    raise
+      newException(IOError, "encode: SDL_CreateSurfaceFrom failed: " & $SDL_GetError())
   let ok = IMG_SavePNG(surf, filename.cstring)
   SDL_DestroySurface(surf)
   if not ok:
@@ -122,6 +130,11 @@ proc newImage*(nim2d: Nim2d, data: ImageData, mipmaps = false): Image =
   if data.width <= 0 or data.height <= 0:
     raise newException(ValueError, "newImage: image data is empty")
   let tex = nim2d.gpu.createTextureFromPixels(
-    addr data.pixels[0], data.width.int, data.height.int, data.width.int * 4, mipmaps)
-  Image(tex: tex, width: data.width, height: data.height,
-        tint: (255'u8, 255'u8, 255'u8, 255'u8))
+    addr data.pixels[0], data.width.int, data.height.int, data.width.int * 4, mipmaps
+  )
+  Image(
+    tex: tex,
+    width: data.width,
+    height: data.height,
+    tint: (255'u8, 255'u8, 255'u8, 255'u8),
+  )

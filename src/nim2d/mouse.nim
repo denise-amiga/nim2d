@@ -37,7 +37,8 @@ proc isMouseDown*(button: int = 1): bool =
 
 proc isMouseDown*(button: MouseButton): bool =
   ## Whether a mouse button is held, as a MouseButton (the friendly form).
-  let n = case button
+  let n =
+    case button
     of MouseButton.left: 1
     of MouseButton.middle: 2
     of MouseButton.right: 3
@@ -49,8 +50,10 @@ proc isMouseDown*(button: MouseButton): bool =
 
 proc setMouseVisible*(visible: bool) =
   ## Show or hide the mouse cursor.
-  if visible: discard SDL_ShowCursor()
-  else: discard SDL_HideCursor()
+  if visible:
+    discard SDL_ShowCursor()
+  else:
+    discard SDL_HideCursor()
 
 proc isMouseVisible*(): bool =
   ## Whether the cursor is shown.

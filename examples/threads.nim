@@ -12,12 +12,16 @@ const target = 1_500_000
 var progress = newChannel[tuple[pct, primes: int]]()
 
 proc isPrime(n: int): bool =
-  if n < 2: return false
-  if n < 4: return true
-  if (n and 1) == 0: return false
+  if n < 2:
+    return false
+  if n < 4:
+    return true
+  if (n and 1) == 0:
+    return false
   var i = 3
   while i * i <= n:
-    if n mod i == 0: return false
+    if n mod i == 0:
+      return false
     i += 2
   true
 
@@ -25,7 +29,8 @@ proc countPrimes() {.thread.} =
   var found = 0
   var lastPct = -1
   for n in 2 .. target:
-    if isPrime(n): inc found
+    if isPrime(n):
+      inc found
     let pct = n * 100 div target
     if pct != lastPct:
       lastPct = pct
@@ -45,11 +50,12 @@ n2d.load = proc(nim2d: Nim2d) =
   worker = newThread(countPrimes)
 
 n2d.keydown = proc(nim2d: Nim2d, sc: Key) =
-  if sc == Key.escape: nim2d.running = false
+  if sc == Key.escape:
+    nim2d.running = false
 
 n2d.update = proc(nim2d: Nim2d, dt: float) =
   spin += dt * 2.6
-  while progress.peek() > 0:           # drain whatever the worker has sent
+  while progress.peek() > 0: # drain whatever the worker has sent
     let (p, f) = progress.receive()
     pct = p
     primes = f
@@ -80,7 +86,13 @@ n2d.draw = proc(nim2d: Nim2d) =
   nim2d.print("counting primes up to " & $target & " on a background thread", 120, 300)
   nim2d.print("progress: " & $pct & "%      primes found: " & $primes, 120, 330)
   nim2d.setColor(150, 200, 255)
-  nim2d.print(if pct >= 100: "done, and the spinner never stuttered" else:
-              "the spinner keeps turning while the work runs off the main loop", 120, 366)
+  nim2d.print(
+    if pct >= 100:
+      "done, and the spinner never stuttered"
+    else:
+      "the spinner keeps turning while the work runs off the main loop",
+    120,
+    366,
+  )
 
 n2d.play()

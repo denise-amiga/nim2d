@@ -13,10 +13,10 @@ const
   H = 640
   Cx = W / 2
   Cy = H / 2
-  Focal = 400.0     # screen = center + world * Focal / depth
-  ZFar = 12.0       # enemies spawn this deep
-  ZShip = 1.6       # the ship floats just in front of the camera
-  ZNear = 1.0       # anything closer has flown past
+  Focal = 400.0 # screen = center + world * Focal / depth
+  ZFar = 12.0 # enemies spawn this deep
+  ZShip = 1.6 # the ship floats just in front of the camera
+  ZNear = 1.0 # anything closer has flown past
   StarCount = 300
   ShipRangeX = 1.05
   ShipRangeTop = -0.7
@@ -27,7 +27,9 @@ type
     x, y, z, pz: float
 
   EnemyKind = enum
-    ekDiamond, ekDart, ekHex
+    ekDiamond
+    ekDart
+    ekHex
 
   Enemy = object
     kind: EnemyKind
@@ -48,25 +50,26 @@ var
   shots: seq[Shot]
   shards: seq[Shard]
   shipX, shipY: float
-  tilt: float          # -1 to 1, banks the ship while strafing
-  mouseTX, mouseTY: float   # where the mouse wants the ship, in world units
-  mouseActive: bool    # the last steering input was the mouse
+  tilt: float # -1 to 1, banks the ship while strafing
+  mouseTX, mouseTY: float # where the mouse wants the ship, in world units
+  mouseActive: bool # the last steering input was the mouse
   score: int
   lives: int
   level: int
   elapsed: float
-  spawnIn: float       # seconds until the next enemy appears
-  cooldown: float      # seconds until the gun can fire again
-  shield: float        # invulnerability left after taking a hit
-  gridOff: float       # scroll offset of the ground grid rows
-  jump: float          # warp jump time left
-  jumpDur: float       # full length of the current jump
-  jumpF: float         # 0 to 1, how deep into warp the jump is right now
-  shake: float         # camera shake time left
+  spawnIn: float # seconds until the next enemy appears
+  cooldown: float # seconds until the gun can fire again
+  shield: float # invulnerability left after taking a hit
+  gridOff: float # scroll offset of the ground grid rows
+  jump: float # warp jump time left
+  jumpDur: float # full length of the current jump
+  jumpF: float # 0 to 1, how deep into warp the jump is right now
+  shake: float # camera shake time left
   dead: bool
 
 randomize()
-let n2d = newNim2d("nim2d - starfield", 130, 80, W.cint, H.cint, (4'u8, 4'u8, 10'u8, 255'u8))
+let n2d =
+  newNim2d("nim2d - starfield", 130, 80, W.cint, H.cint, (4'u8, 4'u8, 10'u8, 255'u8))
 let font = newFont(getAppDir() / "font.ttf", 22)
 let bigFont = newFont(getAppDir() / "font.ttf", 56)
 n2d.setFont(font)
@@ -95,18 +98,30 @@ proc bounty(k: EnemyKind): int =
 
 proc hue(k: EnemyKind): Color =
   case k
-  of ekDiamond: rgb(220, 70, 200)
-  of ekDart: rgb(255, 120, 60)
-  of ekHex: rgb(50, 170, 165)
+  of ekDiamond:
+    rgb(220, 70, 200)
+  of ekDart:
+    rgb(255, 120, 60)
+  of ekHex:
+    rgb(50, 170, 165)
 
 proc boom(x, y, z: float, c: Color, n: int) =
   for _ in 0 ..< n:
     let ang = rand(0.0 .. TAU)
     let sp = rand(0.25 .. 1.1)
     let life = rand(0.3 .. 0.6)
-    shards.add Shard(x: x, y: y, z: z, vx: cos(ang) * sp, vy: sin(ang) * sp,
-                     rot: rand(0.0 .. TAU), spin: rand(-9.0 .. 9.0),
-                     life: life, maxLife: life, color: c)
+    shards.add Shard(
+      x: x,
+      y: y,
+      z: z,
+      vx: cos(ang) * sp,
+      vy: sin(ang) * sp,
+      rot: rand(0.0 .. TAU),
+      spin: rand(-9.0 .. 9.0),
+      life: life,
+      maxLife: life,
+      color: c,
+    )
 
 proc resetStar(s: var Star) =
   s.x = rand(-W.float .. W.float)
@@ -137,7 +152,7 @@ proc reset() =
   shield = 0
   shake = 0
   dead = false
-  startJump(2.4)   # the opening warp into the first wave
+  startJump(2.4) # the opening warp into the first wave
 
 for _ in 0 ..< StarCount:
   var s: Star
@@ -147,11 +162,22 @@ reset()
 
 proc spawnEnemy() =
   # The roster widens as the waves go on: darts join in wave 2, hexes in 3.
-  let top = if level >= 3: 2 elif level >= 2: 1 else: 0
+  let top =
+    if level >= 3:
+      2
+    elif level >= 2:
+      1
+    else:
+      0
   let kind = EnemyKind(rand(top))
-  enemies.add Enemy(kind: kind,
-    x: rand(-0.95 .. 0.95), y: rand(-0.55 .. 0.75), z: ZFar,
-    spin: rand(0.0 .. TAU), hp: (if kind == ekHex: 2 else: 1))
+  enemies.add Enemy(
+    kind: kind,
+    x: rand(-0.95 .. 0.95),
+    y: rand(-0.55 .. 0.75),
+    z: ZFar,
+    spin: rand(0.0 .. TAU),
+    hp: (if kind == ekHex: 2 else: 1),
+  )
 
 proc hitShip() =
   dec lives
@@ -163,10 +189,13 @@ proc hitShip() =
 
 n2d.keydown = proc(nim2d: Nim2d, key: Key) =
   case key
-  of Key.escape: nim2d.running = false
+  of Key.escape:
+    nim2d.running = false
   of Key.r:
-    if dead: reset()
-  else: discard
+    if dead:
+      reset()
+  else:
+    discard
 
 n2d.mousemove = proc(nim2d: Nim2d, x, y, dx, dy: float) =
   # Map the cursor back through the projection to a world position at the
@@ -179,43 +208,60 @@ n2d.update = proc(nim2d: Nim2d, dt: float) =
   let approach = min(4.0, 1.55 + 0.28 * (level - 1).float)
 
   # The warp jump and the backdrop keep moving even on the game-over screen.
-  if jump > 0: jump -= dt
-  jumpF = if jump > 0: sin(PI * clamp(1.0 - jump / jumpDur, 0.0, 1.0)) else: 0.0
+  if jump > 0:
+    jump -= dt
+  jumpF =
+    if jump > 0:
+      sin(PI * clamp(1.0 - jump / jumpDur, 0.0, 1.0))
+    else:
+      0.0
   let warp = (22.0 + 4.0 * level.float) * (1.0 + 10.0 * jumpF)
   for s in stars.mitems:
     s.pz = s.z
     s.z -= warp * dt * 60.0
-    if s.z < 1: resetStar(s)
+    if s.z < 1:
+      resetStar(s)
   gridOff += approach * 0.9 * dt * (1.0 + 5.0 * jumpF)
-  if shake > 0: shake -= dt
+  if shake > 0:
+    shake -= dt
 
   var i = 0
   while i < shards.len:
-    template d: untyped = shards[i]
+    template d(): untyped =
+      shards[i]
+
     d.x += d.vx * dt
     d.y += d.vy * dt
     d.rot += d.spin * dt
     d.life -= dt
-    if d.life <= 0: shards.del(i)
-    else: inc i
+    if d.life <= 0:
+      shards.del(i)
+    else:
+      inc i
 
-  if dead: return
+  if dead:
+    return
   elapsed += dt
   let wave = 1 + int(elapsed / 20)
   if wave > level:
     level = wave
-    startJump(1.8)   # hyperjump between waves
-  if shield > 0: shield -= dt
+    startJump(1.8) # hyperjump between waves
+  if shield > 0:
+    shield -= dt
 
   # Steering. Arrow keys take over from the mouse and the mouse takes over as
   # soon as it moves; the tilt follows the real sideways speed to bank the ship.
   let prevX = shipX
   var mx = 0.0
   var my = 0.0
-  if isDown(Key.left): mx -= 1
-  if isDown(Key.right): mx += 1
-  if isDown(Key.up): my -= 1
-  if isDown(Key.down): my += 1
+  if isDown(Key.left):
+    mx -= 1
+  if isDown(Key.right):
+    mx += 1
+  if isDown(Key.up):
+    my -= 1
+  if isDown(Key.down):
+    my += 1
   if mx != 0 or my != 0:
     mouseActive = false
     shipX = clamp(shipX + mx * 1.6 * dt, -ShipRangeX, ShipRangeX)
@@ -231,7 +277,7 @@ n2d.update = proc(nim2d: Nim2d, dt: float) =
     shots.add Shot(x: shipX, y: shipY - 0.03, z: ZShip + 0.05, pz: ZShip + 0.05)
     cooldown = 0.16
 
-  if jump <= 0:   # between dimensions nothing new shows up
+  if jump <= 0: # between dimensions nothing new shows up
     spawnIn -= dt
     if spawnIn <= 0:
       spawnEnemy()
@@ -239,14 +285,20 @@ n2d.update = proc(nim2d: Nim2d, dt: float) =
 
   i = 0
   while i < enemies.len:
-    template e: untyped = enemies[i]
+    template e(): untyped =
+      enemies[i]
+
     let prevZ = e.z
     e.z -= approach * pace(e.kind) * dt
     e.spin += 2.2 * dt
     case e.kind
-    of ekDart: e.x += (shipX - e.x) * 0.5 * dt   # darts steer toward you
-    of ekDiamond: e.x += sin(elapsed * 2.0 + e.spin) * 0.15 * dt
-    of ekHex: discard
+    of ekDart:
+      e.x += (shipX - e.x) * 0.5 * dt
+    # darts steer toward you
+    of ekDiamond:
+      e.x += sin(elapsed * 2.0 + e.spin) * 0.15 * dt
+    of ekHex:
+      discard
     if prevZ >= ZShip and e.z < ZShip and shield <= 0 and
         distance(e.x, e.y, shipX, shipY) < radius(e.kind) + 0.1:
       hitShip()
@@ -259,7 +311,9 @@ n2d.update = proc(nim2d: Nim2d, dt: float) =
 
   var si = 0
   while si < shots.len:
-    template sh: untyped = shots[si]
+    template sh(): untyped =
+      shots[si]
+
     sh.pz = sh.z
     sh.z += 14.0 * dt
     # A little aim assist: the bolt drifts toward the nearest enemy still
@@ -278,7 +332,9 @@ n2d.update = proc(nim2d: Nim2d, dt: float) =
     var spent = false
     var ei = 0
     while ei < enemies.len:
-      template e: untyped = enemies[ei]
+      template e(): untyped =
+        enemies[ei]
+
       # The depth test sweeps the distance the bolt covered this frame, and
       # the lateral test is generous, since exact world distances read as
       # unfair on screen once the perspective squeezes everything together.
@@ -292,8 +348,10 @@ n2d.update = proc(nim2d: Nim2d, dt: float) =
           enemies.del(ei)
         break
       inc ei
-    if spent or sh.z > ZFar: shots.del(si)
-    else: inc si
+    if spent or sh.z > ZFar:
+      shots.del(si)
+    else:
+      inc si
 
 proc drawEnemy(nim2d: Nim2d, e: Enemy) =
   let p = proj(e.x, e.y, e.z)
@@ -317,13 +375,19 @@ proc drawEnemy(nim2d: Nim2d, e: Enemy) =
       let a = e.spin * 0.5 + k.float / 6.0 * TAU
       xs[k] = p.x + cos(a) * s
       ys[k] = p.y + sin(a) * s
-    nim2d.setColor(if e.hp == 1: rgb(255, 130, 100) else: hue(e.kind))
+    nim2d.setColor(
+      if e.hp == 1:
+        rgb(255, 130, 100)
+      else:
+        hue(e.kind)
+    )
     nim2d.polygon(xs, ys, true)
     nim2d.setColor(8, 30, 30)
     nim2d.circle(p.x, p.y, s * 0.4, true)
 
 proc drawShip(nim2d: Nim2d) =
-  if shield > 0 and (int(elapsed * 12) mod 2 == 0): return   # blink while hit
+  if shield > 0 and (int(elapsed * 12) mod 2 == 0):
+    return # blink while hit
   let p = proj(shipX, shipY, ZShip)
   let s = 0.11 * Focal / ZShip
   # Seen from behind, nose aimed at the vanishing point its path converges
@@ -378,7 +442,10 @@ n2d.draw = proc(nim2d: Nim2d) =
     nim2d.line(@[(px, py), (sx, sy)], (1.0 - s.z / W.float) * 2.5 + 0.5)
 
   # Far enemies first so the close ones overlap them.
-  enemies.sort(proc(a, b: Enemy): int = cmp(b.z, a.z))
+  enemies.sort(
+    proc(a, b: Enemy): int =
+      cmp(b.z, a.z)
+  )
   for e in enemies:
     nim2d.drawEnemy(e)
 
@@ -395,7 +462,8 @@ n2d.draw = proc(nim2d: Nim2d) =
       nim2d.triangle(0, -s, s, s, -s, s, true)
 
   nim2d.drawShip()
-  if shaking: nim2d.pop()
+  if shaking:
+    nim2d.pop()
 
   # A wash of light at the peak of the jump, with the wave announcement.
   if jumpF > 0.02:

@@ -20,7 +20,8 @@ suite "filesystem (temp-dir round trip)":
       fs.append("hello.txt", "\nthere")
       check fs.read("hello.txt") == "hi\nthere"
       var got: seq[string]
-      for line in fs.lines("hello.txt"): got.add line
+      for line in fs.lines("hello.txt"):
+        got.add line
       check got == @["hi", "there"]
       check fs.exists("hello.txt")
       check not fs.exists("nope.txt")
@@ -44,7 +45,7 @@ suite "filesystem (temp-dir round trip)":
       check info.get.modtime > 0
       check fs.remove("sub/data.bin")
       check not fs.exists("sub/data.bin")
-      check fs.remove("sub")          # now empty
+      check fs.remove("sub") # now empty
       check not fs.exists("sub")
     finally:
       removeDir(save)
@@ -62,15 +63,16 @@ suite "filesystem (temp-dir round trip)":
       writeFile(save / "shared.txt", "from-save")
       let fs = Filesystem(saveDir: save, sourceDir: src, mounts: @[])
       fs.mount(mnt)
-      check fs.read("shared.txt") == "from-save"   # save directory wins
+      check fs.read("shared.txt") == "from-save" # save directory wins
       check fs.read("extra.txt") == "from-mount"
       let items = fs.getDirectoryItems("")
-      check items.count("shared.txt") == 1         # listed once across roots
+      check items.count("shared.txt") == 1 # listed once across roots
       check "extra.txt" in items
       check fs.unmount(mnt)
       check not fs.exists("extra.txt")
     finally:
-      for d in [save, src, mnt]: removeDir(d)
+      for d in [save, src, mnt]:
+        removeDir(d)
 
   test "sandbox rejects names that escape the save directory":
     let save = getTempDir() / "nim2d_fs_d"
@@ -78,8 +80,10 @@ suite "filesystem (temp-dir round trip)":
     createDir(save)
     try:
       let fs = Filesystem(saveDir: save, mounts: @[])
-      expect IOError: fs.write("../escape.txt", "no")
-      expect IOError: fs.write("/abs.txt", "no")
+      expect IOError:
+        fs.write("../escape.txt", "no")
+      expect IOError:
+        fs.write("/abs.txt", "no")
       check not fs.exists("../escape.txt")
     finally:
       removeDir(save)

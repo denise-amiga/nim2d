@@ -24,7 +24,8 @@ var
   dead: bool
 
 randomize()
-let n2d = newNim2d("nim2d - snake", 140, 80, W.cint, H.cint, (16'u8, 20'u8, 24'u8, 255'u8))
+let n2d =
+  newNim2d("nim2d - snake", 140, 80, W.cint, H.cint, (16'u8, 20'u8, 24'u8, 255'u8))
 let font = newFont(getAppDir() / "font.ttf", 24)
 let bigFont = newFont(getAppDir() / "font.ttf", 56)
 n2d.setFont(font)
@@ -37,8 +38,12 @@ proc placeFood() =
       break
 
 proc reset() =
-  snake = @[(Cols div 2, Rows div 2), (Cols div 2 - 1, Rows div 2),
-            (Cols div 2 - 2, Rows div 2)]
+  snake =
+    @[
+      (Cols div 2, Rows div 2),
+      (Cols div 2 - 1, Rows div 2),
+      (Cols div 2 - 2, Rows div 2),
+    ]
   dir = (1, 0)
   nextDir = (1, 0)
   acc = 0
@@ -52,23 +57,31 @@ reset()
 n2d.keydown = proc(nim2d: Nim2d, scancode: Key) =
   case scancode
   of Key.up, Key.w:
-    if dir.y == 0: nextDir = (0, -1)
+    if dir.y == 0:
+      nextDir = (0, -1)
   of Key.down, Key.s:
-    if dir.y == 0: nextDir = (0, 1)
+    if dir.y == 0:
+      nextDir = (0, 1)
   of Key.left, Key.a:
-    if dir.x == 0: nextDir = (-1, 0)
+    if dir.x == 0:
+      nextDir = (-1, 0)
   of Key.right, Key.d:
-    if dir.x == 0: nextDir = (1, 0)
+    if dir.x == 0:
+      nextDir = (1, 0)
   of Key.r:
-    if dead: reset()
+    if dead:
+      reset()
   of Key.escape:
     nim2d.running = false
-  else: discard
+  else:
+    discard
 
 n2d.update = proc(nim2d: Nim2d, dt: float) =
-  if dead: return
+  if dead:
+    return
   acc += dt
-  if acc < step: return
+  if acc < step:
+    return
   acc = 0
   dir = nextDir
   let head: Cellxy = (snake[0].x + dir.x, snake[0].y + dir.y)
@@ -84,8 +97,14 @@ n2d.update = proc(nim2d: Nim2d, dt: float) =
     snake.setLen(snake.len - 1)
 
 proc cellRect(nim2d: Nim2d, c: Cellxy, pad: float) =
-  nim2d.rectangle(c.x.float * Cell.float + pad, c.y.float * Cell.float + TopBar.float + pad,
-                  Cell.float - pad * 2, Cell.float - pad * 2, true, 5)
+  nim2d.rectangle(
+    c.x.float * Cell.float + pad,
+    c.y.float * Cell.float + TopBar.float + pad,
+    Cell.float - pad * 2,
+    Cell.float - pad * 2,
+    true,
+    5,
+  )
 
 n2d.draw = proc(nim2d: Nim2d) =
   # board
@@ -96,8 +115,10 @@ n2d.draw = proc(nim2d: Nim2d) =
   nim2d.cellRect(food, 3)
   # snake
   for i, c in snake:
-    if i == 0: nim2d.setColor(150, 240, 130)
-    else: nim2d.setColor(90, 200, 110)
+    if i == 0:
+      nim2d.setColor(150, 240, 130)
+    else:
+      nim2d.setColor(90, 200, 110)
     nim2d.cellRect(c, 2)
   # hud
   nim2d.setColor(235, 240, 255)

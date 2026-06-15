@@ -12,8 +12,7 @@
 import std/typedthreads
 
 type
-  Thread2d* = ref object
-    ## A running background thread.
+  Thread2d* = ref object ## A running background thread.
     handle: Thread[void]
 
   Channel2d*[T] = object

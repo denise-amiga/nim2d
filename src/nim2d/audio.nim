@@ -25,7 +25,8 @@ type
   SourceType* = enum
     ## Static decodes fully into memory for short sounds; stream decodes as it
     ## plays for music.
-    stStatic, stStream
+    stStatic
+    stStream
 
   Source* = ref object
     ## A playable sound: a loaded `MIX_Audio` bound to its own `MIX_Track`.
@@ -36,7 +37,7 @@ type
     volume: float
     pitch: float
     positioned: bool
-    wx, wy, wz: float        ## world position, used for the listener offset
+    wx, wy, wz: float ## world position, used for the listener offset
 
 var
   gMixer: ptr MIX_Mixer = nil
@@ -51,10 +52,13 @@ proc initAudio*(nim2d: Nim2d) =
   ## Open the audio device and the mixer. Called once by `newNim2d`. If no device
   ## is available it leaves audio off rather than failing, and it is safe to call
   ## again as a no-op. Audio reopens cleanly after `shutdownAudio`.
-  if gMixer != nil: return    # already open
-  if gInitTried: return       # tried once with no device, do not keep retrying
+  if gMixer != nil:
+    return # already open
+  if gInitTried:
+    return # tried once with no device, do not keep retrying
   gInitTried = true
-  if not MIX_Init(): return
+  if not MIX_Init():
+    return
   let m = MIX_CreateMixerDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, nil)
   if m == nil:
     MIX_Quit()
@@ -90,15 +94,19 @@ proc newSource*(nim2d: Nim2d, filename: string, kind: SourceType = stStatic): So
   ## through SDL_mixer. With audio off this returns a source whose controls do
   ## nothing.
   result = Source(kind: kind, volume: 1.0, pitch: 1.0)
-  if gMixer == nil: return
+  if gMixer == nil:
+    return
   result.audio = MIX_LoadAudio(gMixer, filename.cstring, kind == stStatic)
   if result.audio == nil:
-    raise newException(IOError, "could not load audio '" & filename & "': " & $SDL_GetError())
+    raise newException(
+      IOError, "could not load audio '" & filename & "': " & $SDL_GetError()
+    )
   result.track = MIX_CreateTrack(gMixer)
   if result.track == nil:
     MIX_DestroyAudio(result.audio)
     result.audio = nil
-    raise newException(CatchableError, "could not create audio track: " & $SDL_GetError())
+    raise
+      newException(CatchableError, "could not create audio track: " & $SDL_GetError())
   discard MIX_SetTrackAudio(result.track, result.audio)
   gSources.add result
 
@@ -106,40 +114,48 @@ proc play*(src: Source) =
   ## Start the source from the beginning, or restart it if already playing.
   ## The loop count is set through the play options, because setting it on a
   ## stopped track has no lasting effect.
-  if src.track == nil: return
+  if src.track == nil:
+    return
   let props = SDL_CreateProperties()
-  discard SDL_SetNumberProperty(props, MIX_PROP_PLAY_LOOPS_NUMBER.cstring,
-                                Sint64(if src.looping: -1 else: 0))
+  discard SDL_SetNumberProperty(
+    props, MIX_PROP_PLAY_LOOPS_NUMBER.cstring, Sint64(if src.looping: -1 else: 0)
+  )
   discard MIX_PlayTrack(src.track, props)
   SDL_DestroyProperties(props)
 
 proc pause*(src: Source) =
   ## Pause playback, keeping the current position.
-  if src.track != nil: discard MIX_PauseTrack(src.track)
+  if src.track != nil:
+    discard MIX_PauseTrack(src.track)
 
 proc resume*(src: Source) =
   ## Resume a paused source from where it stopped.
-  if src.track != nil: discard MIX_ResumeTrack(src.track)
+  if src.track != nil:
+    discard MIX_ResumeTrack(src.track)
 
 proc stop*(src: Source) =
   ## Stop playback and reset the position to the start.
-  if src.track == nil: return
+  if src.track == nil:
+    return
   discard MIX_StopTrack(src.track, 0)
   discard MIX_SetTrackPlaybackPosition(src.track, 0)
 
 proc rewind*(src: Source) =
   ## Seek back to the start without stopping.
-  if src.track != nil: discard MIX_SetTrackPlaybackPosition(src.track, 0)
+  if src.track != nil:
+    discard MIX_SetTrackPlaybackPosition(src.track, 0)
 
 proc seek*(src: Source, seconds: float) =
   ## Jump to a position in seconds.
-  if src.track == nil: return
+  if src.track == nil:
+    return
   let frames = MIX_TrackMSToFrames(src.track, Sint64(seconds * 1000))
   discard MIX_SetTrackPlaybackPosition(src.track, frames)
 
 proc tell*(src: Source): float =
   ## The current playback position in seconds.
-  if src.track == nil: return 0.0
+  if src.track == nil:
+    return 0.0
   let frames = MIX_GetTrackPlaybackPosition(src.track)
   MIX_TrackFramesToMS(src.track, frames).float / 1000.0
 
@@ -154,7 +170,8 @@ proc isPaused*(src: Source): bool =
 proc setVolume*(src: Source, volume: float) =
   ## Set per-source gain, 0.0 silent to 1.0 full; values above 1.0 amplify.
   src.volume = volume
-  if src.track != nil: discard MIX_SetTrackGain(src.track, volume.cfloat)
+  if src.track != nil:
+    discard MIX_SetTrackGain(src.track, volume.cfloat)
 
 proc getVolume*(src: Source): float =
   ## The source's current gain.
@@ -164,7 +181,8 @@ proc setPitch*(src: Source, pitch: float) =
   ## Set the playback speed and pitch together, 1.0 is normal. There is no
   ## independent time stretch.
   src.pitch = pitch
-  if src.track != nil: discard MIX_SetTrackFrequencyRatio(src.track, pitch.cfloat)
+  if src.track != nil:
+    discard MIX_SetTrackFrequencyRatio(src.track, pitch.cfloat)
 
 proc getPitch*(src: Source): float =
   ## The source's current pitch/speed ratio.
@@ -182,9 +200,11 @@ proc isLooping*(src: Source): bool =
 
 proc duration*(src: Source): float =
   ## Length of the sound in seconds, or -1 if unknown or infinite.
-  if src.audio == nil: return -1.0
+  if src.audio == nil:
+    return -1.0
   let frames = MIX_GetAudioDuration(src.audio)
-  if frames < 0: return -1.0
+  if frames < 0:
+    return -1.0
   MIX_AudioFramesToMS(src.audio, frames).float / 1000.0
 
 # --- positional audio ------------------------------------------------------
@@ -195,8 +215,10 @@ func listenerRelative*(wx, wy, wz, lx, ly, lz: float): tuple[x, y, z: float] =
   (wx - lx, -(wy - ly), wz - lz)
 
 proc applyPosition(src: Source) =
-  if src.track == nil or not src.positioned: return
-  let r = listenerRelative(src.wx, src.wy, src.wz, gListener.x, gListener.y, gListener.z)
+  if src.track == nil or not src.positioned:
+    return
+  let r =
+    listenerRelative(src.wx, src.wy, src.wz, gListener.x, gListener.y, gListener.z)
   var p = MIX_Point3D(x: r.x.cfloat, y: r.y.cfloat, z: r.z.cfloat)
   discard MIX_SetTrack3DPosition(src.track, addr p)
 
@@ -213,20 +235,25 @@ proc setPosition*(src: Source, x, y: float, z: float = 0) =
 
 proc clearPosition*(src: Source) =
   ## Turn off positional mixing for this source.
-  if not src.positioned: return
+  if not src.positioned:
+    return
   src.positioned = false
   let i = gPositioned.find(src)
-  if i >= 0: gPositioned.delete(i)
-  if src.track != nil: discard MIX_SetTrack3DPosition(src.track, nil)
+  if i >= 0:
+    gPositioned.delete(i)
+  if src.track != nil:
+    discard MIX_SetTrack3DPosition(src.track, nil)
 
 proc destroy*(src: Source) =
   ## Stop the source and free its track and audio data.
   if src.positioned:
     let i = gPositioned.find(src)
-    if i >= 0: gPositioned.delete(i)
+    if i >= 0:
+      gPositioned.delete(i)
     src.positioned = false
   let si = gSources.find(src)
-  if si >= 0: gSources.delete(si)
+  if si >= 0:
+    gSources.delete(si)
   if src.track != nil:
     MIX_DestroyTrack(src.track)
     src.track = nil
@@ -238,20 +265,26 @@ proc destroy*(src: Source) =
 
 proc setVolume*(nim2d: Nim2d, volume: float) =
   ## Master gain applied to everything the mixer outputs.
-  if gMixer != nil: discard MIX_SetMixerGain(gMixer, volume.cfloat)
+  if gMixer != nil:
+    discard MIX_SetMixerGain(gMixer, volume.cfloat)
 
 proc getVolume*(nim2d: Nim2d): float =
   ## The master gain.
-  if gMixer != nil: MIX_GetMixerGain(gMixer).float else: 1.0
+  if gMixer != nil:
+    MIX_GetMixerGain(gMixer).float
+  else:
+    1.0
 
 proc stopAll*(nim2d: Nim2d) =
   ## Stop every playing source at once.
-  if gMixer != nil: discard MIX_StopAllTracks(gMixer, 0)
+  if gMixer != nil:
+    discard MIX_StopAllTracks(gMixer, 0)
 
 proc setListenerPosition*(nim2d: Nim2d, x, y: float, z: float = 0) =
   ## Move the listener. Every positioned source is re-offset so panning follows.
   gListener = (x, y, z)
-  for s in gPositioned: s.applyPosition()
+  for s in gPositioned:
+    s.applyPosition()
 
 proc getListenerPosition*(nim2d: Nim2d): tuple[x, y, z: float] =
   ## The current listener position.

@@ -53,15 +53,23 @@ proc restore*(nim2d: Nim2d) =
 proc getDesktopDimensions*(): tuple[w, h: int32] =
   ## The desktop resolution of the primary display.
   let mode = SDL_GetDesktopDisplayMode(SDL_GetPrimaryDisplay())
-  if mode == nil: return (0'i32, 0'i32)
+  if mode == nil:
+    return (0'i32, 0'i32)
   (mode.w.int32, mode.h.int32)
 
 proc setIcon*(nim2d: Nim2d, data: ImageData) =
   ## Set the window icon from an ImageData.
-  if data.width <= 0 or data.height <= 0: return
-  let surf = SDL_CreateSurfaceFrom(data.width.cint, data.height.cint,
-    SDL_PIXELFORMAT_RGBA32, addr data.pixels[0], (data.width.int * 4).cint)
-  if surf == nil: return
+  if data.width <= 0 or data.height <= 0:
+    return
+  let surf = SDL_CreateSurfaceFrom(
+    data.width.cint,
+    data.height.cint,
+    SDL_PIXELFORMAT_RGBA32,
+    addr data.pixels[0],
+    (data.width.int * 4).cint,
+  )
+  if surf == nil:
+    return
   discard SDL_SetWindowIcon(nim2d.gpu.window, surf)
   SDL_DestroySurface(surf)
 
@@ -69,7 +77,10 @@ proc showMessageBox*(nim2d: Nim2d, title, message: string) =
   ## Show a simple information message box, blocking until it is dismissed.
   discard SDL_ShowSimpleMessageBox(
     SDL_MessageBoxFlags(SDL_MESSAGEBOX_INFORMATION),
-    title.cstring, message.cstring, nim2d.gpu.window)
+    title.cstring,
+    message.cstring,
+    nim2d.gpu.window,
+  )
 
 proc setVSync*(nim2d: Nim2d, on: bool) =
   ## Turn vertical sync on or off. With it off the frame rate is uncapped, which
@@ -80,7 +91,8 @@ proc setVSync*(nim2d: Nim2d, on: bool) =
   var mode = (if on: SDL_GPU_PRESENTMODE_VSYNC else: SDL_GPU_PRESENTMODE_IMMEDIATE)
   if not on and not SDL_WindowSupportsGPUPresentMode(dev, win, mode):
     mode = SDL_GPU_PRESENTMODE_VSYNC
-  discard SDL_SetGPUSwapchainParameters(dev, win, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, mode)
+  discard
+    SDL_SetGPUSwapchainParameters(dev, win, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, mode)
 
 proc getDPIScale*(nim2d: Nim2d): float =
   ## The ratio of backing pixels to window points. It is 1.0 on a normal display
