@@ -31,6 +31,25 @@ jobs:
           nim-version: '2.2.x'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
+      # mkdocstrings-nim's extractor does `import compiler/ast`. The prebuilt Nim
+      # that setup-nim-action installs does ship the compiler sources (under
+      # <prefix>/compiler), but that prefix is not on Nim's default module path,
+      # which is only the $lib subdirs and the nimble package path, so the import
+      # fails. Put the install prefix on the path through a user config that the
+      # extractor's `nim c` reads. The prefix is derived from libPath so it is
+      # symlink-proof, and the last lines fail loudly here if it still does not
+      # resolve, rather than deep inside the mkdocs build.
+      - name: Expose the bundled Nim compiler sources to the doc extractor
+        run: |
+          libpath=$(nim --hints:off --eval:'import std/compilesettings; echo querySetting(SingleValueSetting.libPath)' | tail -1)
+          prefix=$(dirname "$libpath")
+          echo "Nim prefix: $prefix"
+          test -f "$prefix/compiler/ast.nim"
+          mkdir -p ~/.config/nim
+          echo "path:\"$prefix\"" >> ~/.config/nim/nim.cfg
+          printf 'import compiler/ast\n' > /tmp/compilercheck.nim
+          nim c -c --hints:off /tmp/compilercheck.nim
+
       - name: Install Python
         uses: actions/setup-python@v5
         with:
