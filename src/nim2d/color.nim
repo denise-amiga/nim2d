@@ -32,12 +32,14 @@ func lerp*(a, b: Color, t: float): Color =
     uint8(clamp(x.float + (y.float - x.float) * t, 0.0, 255.0))
   (mix(a.r, b.r), mix(a.g, b.g), mix(a.b, b.b), mix(a.a, b.a))
 
-proc color*(hex: string): Color =
+func color*(hex: string): Color =
   ## Parse a hex color: "#rgb", "#rrggbb" or "#rrggbbaa", with the # optional.
+  ## Being a `func`, it folds at compile time, so `const Brand = color("#ff7a3c")`
+  ## builds the color once during compilation and a bad hex is a build error.
   var s = hex
   if s.len > 0 and s[0] == '#':
     s = s[1 .. ^1]
-  proc hx(sub: string): uint8 =
+  func hx(sub: string): uint8 =
     uint8(parseHexInt(sub))
 
   case s.len

@@ -86,6 +86,13 @@ suite "math (rng / noise / geometry)":
     let s3 = simplexNoise(0.1, 0.2, 0.3)
     check s3 >= 0.0 and s3 < 1.0
 
+  test "color parses hex and folds at compile time":
+    const Brand = color("#ff7a3c") # a const proves color is a func, not a proc
+    check Brand == (0xff'u8, 0x7a'u8, 0x3c'u8, 255'u8)
+    check color("#abc") == (0xaa'u8, 0xbb'u8, 0xcc'u8, 255'u8)
+    check color("#11223344") == (0x11'u8, 0x22'u8, 0x33'u8, 0x44'u8)
+    check color("ff7a3c") == Brand # the # is optional
+
   test "bezier hits its endpoints":
     let curve = newBezierCurve(@[(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)])
     let p0 = curve.evaluate(0.0)

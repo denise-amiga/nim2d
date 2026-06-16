@@ -4,7 +4,7 @@ All drawing happens inside the `draw` callback. The window has already cleared t
 
 ## Color
 
-[`setColor`](api/graphics.md#setColor) sets the color used by every shape and by text until you change it. The alpha argument is optional and defaults to fully opaque. You can pass three or four bytes, or a single [`Color`](api/types.md#Color) written however reads best: by name (`setColor(orange)`), from bytes (`setColor(rgb(255, 120, 60))`, with [`rgba`](api/color.md#rgba) when you want the alpha too), from a hex string (`setColor(color("#ff7a3c"))`), or as a gray level (`setColor(gray(128))`). The window background takes a `Color` the same way. [`withAlpha`](api/color.md#withAlpha) gives back a color with a different alpha, and [`lerp`](api/color.md#lerp) blends two colors.
+[`setColor`](api/graphics.md#setColor) sets the color used by every shape and by text until you change it. The alpha argument is optional and defaults to fully opaque. You can pass three or four bytes, or a single [`Color`](api/types.md#Color) written however reads best: by name (`setColor(orange)`), from bytes (`setColor(rgb(255, 120, 60))`, with [`rgba`](api/color.md#rgba) when you want the alpha too), from a hex string (`setColor(color("#ff7a3c"))`), or as a gray level (`setColor(gray(128))`). The window background takes a `Color` the same way. [`withAlpha`](api/color.md#withAlpha) gives back a color with a different alpha, and [`lerp`](api/color.md#lerp) blends two colors. These constructors run at compile time too, so a palette can be `const`, like `const brand = color("#ff7a3c")`, and a malformed hex string then fails the build instead of at runtime.
 
 ```nim
 nim2d.setColor(255, 120, 60)        # opaque orange

@@ -336,10 +336,15 @@ func dot2(g: array[3, int], x, y: float): float =
 func dot3(g: array[3, int], x, y, z: float): float =
   g[0].float * x + g[1].float * y + g[2].float * z
 
+# Simplex skew (f) and unskew (g) factors, by dimension.
+const
+  f2 = 0.3660254037844386 # 0.5 * (sqrt(3) - 1)
+  g2 = 0.21132486540518708 # (3 - sqrt(3)) / 6
+  f3 = 1.0 / 3.0
+  g3 = 1.0 / 6.0
+
 proc simplexNoise*(x, y: float): float =
   ## 2D simplex noise mapped to the 0-to-1 range. Fewer directional artifacts than Perlin.
-  const f2 = 0.3660254037844386 # 0.5 * (sqrt(3) - 1)
-  const g2 = 0.21132486540518708 # (3 - sqrt(3)) / 6
   let s = (x + y) * f2
   let i = floor(x + s).int
   let j = floor(y + s).int
@@ -377,8 +382,6 @@ proc simplexNoise*(x, y: float): float =
 
 proc simplexNoise*(x, y, z: float): float =
   ## 3D simplex noise mapped to the 0-to-1 range.
-  const f3 = 1.0 / 3.0
-  const g3 = 1.0 / 6.0
   let s = (x + y + z) * f3
   let i = floor(x + s).int
   let j = floor(y + s).int
