@@ -318,6 +318,9 @@ proc newGpuContext*(
   result.device = SDL_CreateGPUDevice(want, false, nil)
   if result.device == nil:
     raise newException(CatchableError, "SDL_CreateGPUDevice failed: " & $SDL_GetError())
+  # Publish the live device so device-bound destructors know it is safe to
+  # release GPU handles. Cleared in destroy().
+  gpuLiveDevice = result.device
   # Record which format the chosen backend actually takes, to pick the shader blob.
   let got = SDL_GetGPUShaderFormats(result.device)
   if (uint32(got) and uint32(SDL_GPU_SHADERFORMAT_SPIRV)) != 0:
@@ -833,6 +836,10 @@ proc createDepthTarget*(gpu: GpuContext, w, h: int32): ptr SDL_GPUTexture =
 
 proc destroy*(gpu: GpuContext) =
   let dev = gpu.device
+  # Mark the device gone before tearing it down, so any resource destructor that
+  # runs afterward (during ORC's exit teardown, in unspecified order) is a no-op
+  # rather than releasing handles against a freed device.
+  gpuLiveDevice = nil
   for kind in PipelineKind:
     for blend in BlendMode:
       if gpu.pipelines[kind][blend] != nil:

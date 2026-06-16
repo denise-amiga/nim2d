@@ -22,14 +22,26 @@ type
     btDynamic
     btKinematic
 
-  World* = ref object
-    ## A physics world holding bodies and joints, stepped with `update`.
+  WorldObj = object
     id: b2WorldId
+    freed: bool
+
+  World* = ref WorldObj
+    ## A physics world holding bodies and joints, stepped with `update`. It frees
+    ## itself and everything in it when collected; `destroy` frees it early.
 
   Body* = object
     ## One rigid body in a world. Give it shapes with `addBox` and `addCircle`,
     ## and read it back with `position`, `angle` and `velocity`.
     id: b2BodyId
+
+proc `=destroy`(o: var WorldObj) =
+  # Free the Box2D world when a World is collected, unless it was freed early by
+  # destroy. Box2D ids carry no device dependency, so this is safe at any time,
+  # including ORC's teardown at program exit. Declared before the first World is
+  # constructed so the compiler binds this hook rather than an implicit one.
+  if not o.freed:
+    b2DestroyWorld(o.id)
 
 proc newWorld*(gravityX = 0.0, gravityY = 9.81): World =
   ## A physics world with the given gravity. Positive y points down, matching the
@@ -39,7 +51,11 @@ proc newWorld*(gravityX = 0.0, gravityY = 9.81): World =
   World(id: b2CreateWorld(addr def))
 
 proc destroy*(w: World) =
-  ## Free the world and everything in it.
+  ## Free the world and everything in it right away rather than waiting for it to
+  ## be collected. Safe to call more than once; the world is unusable afterwards.
+  if w == nil or w.freed:
+    return
+  w.freed = true
   b2DestroyWorld(w.id)
 
 proc update*(w: World, dt: float, subSteps = 4) =

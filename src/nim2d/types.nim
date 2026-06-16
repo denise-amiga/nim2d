@@ -1,11 +1,14 @@
 ## Core nim2d types.
 ##
-## This module holds data only. The behaviour lives in the backend renderer and
-## the public modules. Keeping it this way leaves the dependency graph acyclic,
-## since `types` is imported by everything and itself depends only on the SDL
-## shim and the transform math.
+## This module is mostly data, with the behaviour living in the backend renderer
+## and the public modules. The two exceptions are the device-liveness flag and
+## the `=destroy` hooks for the font and shader resources, which Nim wants in the
+## same module as the type they belong to. It stays a leaf of the dependency
+## graph, since `types` is imported by everything and itself depends only on the
+## SDL shims and the transform math.
 
 import backend/sdl
+import backend/sdlttf
 import transform
 
 type
@@ -205,9 +208,7 @@ type
     u0*, v0*, u1*, v1*: float32
     w*, h*: float32
 
-  Font* = ref object
-    ## A font for `print`: either a TrueType font opened through SDL_ttf, or a
-    ## bitmap font built from a glyph sheet by `newImageFont`.
+  FontObj = object
     engine*: pointer ## TTF_TextEngine (GPU text engine)
     font*: pointer ## TTF_Font (nil for a bitmap/image font)
     size*: cint
@@ -217,12 +218,20 @@ type
     imgH*: int32 ## glyph height (the sheet height)
     spacing*: int32 ## pixels added between glyphs
 
-  Shader* = ref object
-    ## A user fragment shader compiled into one pipeline per blend mode, with an
-    ## optional fragment uniform buffer filled by `send`.
+  Font* = ref FontObj
+    ## A font for `print`: either a TrueType font opened through SDL_ttf, or a
+    ## bitmap font built from a glyph sheet by `newImageFont`. Its handles free
+    ## themselves when the font is collected; `destroy` frees them early.
+
+  ShaderObj = object
     pipelines*: array[BlendMode, ptr SDL_GPUGraphicsPipeline]
     uniform*: seq[byte]
     hasUniform*: bool
+
+  Shader* = ref ShaderObj
+    ## A user fragment shader compiled into one pipeline per blend mode, with an
+    ## optional fragment uniform buffer filled by `send`. Its pipelines free
+    ## themselves when the shader is collected; `destroy` frees them early.
 
   Scissor* = object ## A clip rectangle in render-target pixels, off when `on` is false.
     on*: bool
@@ -327,6 +336,7 @@ type
     fs*: Filesystem
     blend*: BlendMode
     running*: bool
+    teardownRan*: bool ## set once teardown has run, so it never runs twice
 
     # timing
     perfFreq*: uint64
@@ -366,3 +376,36 @@ type
     window_focus_gained*: proc(nim2d: Nim2d)
     window_focus_lost*: proc(nim2d: Nim2d)
     window_close*: proc(nim2d: Nim2d)
+
+# --- resource lifetime -------------------------------------------------------
+
+var gpuLiveDevice*: ptr SDL_GPUDevice
+  ## The live GPU device. The renderer sets this when the context is created and
+  ## clears it on teardown. Device-bound destructors check it first, so a font,
+  ## shader or other resource collected after the engine has shut down frees
+  ## nothing and the device's own teardown reclaims it instead. This sidesteps
+  ## the unspecified order in which ORC frees globals at exit.
+
+proc `=destroy`(o: var FontObj) =
+  # A TrueType handle and, for a bitmap font, an internal glyph-sheet texture.
+  # Releasing the texture needs a live device; closing the TTF font does not,
+  # but gating the whole thing keeps a late destructor a clean no-op.
+  if gpuLiveDevice != nil:
+    if o.font != nil:
+      TTF_CloseFont(cast[ptr TTF_Font](o.font))
+    if o.img != nil and o.img.tex != nil:
+      SDL_ReleaseGPUTexture(gpuLiveDevice, o.img.tex)
+      o.img.tex = nil
+  # A custom destructor takes over field teardown, so free the managed ones.
+  `=destroy`(o.img)
+  `=destroy`(o.glyphSet)
+  `=destroy`(o.glyphX)
+  `=destroy`(o.glyphW)
+
+proc `=destroy`(o: var ShaderObj) =
+  if gpuLiveDevice != nil:
+    for blend in BlendMode:
+      if o.pipelines[blend] != nil:
+        SDL_ReleaseGPUGraphicsPipeline(gpuLiveDevice, o.pipelines[blend])
+        o.pipelines[blend] = nil
+  `=destroy`(o.uniform)

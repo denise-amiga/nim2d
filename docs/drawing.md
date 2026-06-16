@@ -170,6 +170,8 @@ nim2d.setFont(pixels)
 nim2d.print("SCORE 1234", 20, 20, 0, 4, 4)   # scaled up 4x
 ```
 
+A font holds an open font handle, and a bitmap font also holds a small texture. Both free themselves when the font goes out of use, so you usually do not have to think about it. When you load and drop many fonts, say on a level change, [`nim2d.destroy(font)`](api/font.md#destroy) releases them right away.
+
 ## Sprite batches
 
 When you draw the same texture many times, a sprite batch lets you build the whole lot up and draw it in one call. Make one with [`newSpriteBatch`](api/spritebatch.md#newSpriteBatch), [`add`](api/spritebatch.md#add) each copy with a position and optional rotation, scale and origin, then [`draw`](api/spritebatch.md#draw) the batch. [`clear`](api/spritebatch.md#clear) empties it, and [`setColor`](api/spritebatch.md#setColor) tints whatever you add after it. You can add a quad instead of the whole texture.
@@ -340,6 +342,8 @@ let effect = n2d.newShader(fragSrc, uniformFloats = 4)
 ```
 
 One thing to know: shapes carry texture coordinates of zero, so a shader that should vary across a fullscreen shape wants the pixel position (`in.position.xy` in MSL, `gl_FragCoord.xy` in GLSL) rather than the texture coordinates. The texture coordinates are the right tool when shading an image or a canvas.
+
+A shader compiles a pipeline per blend mode. Like a font, it frees itself when it goes out of use, and [`nim2d.destroy(shader)`](api/shader.md#destroy) releases the pipelines right away when you are cycling through many of them.
 
 !!! info "See also"
     The runnable [`sprites`](https://github.com/nim2d/nim2d/blob/master/examples/sprites.nim), [`particles`](https://github.com/nim2d/nim2d/blob/master/examples/particles.nim) and [`shader`](https://github.com/nim2d/nim2d/blob/master/examples/shader.nim) examples, and the [`graphics`](api/graphics.md) and [`image`](api/image.md) API reference.

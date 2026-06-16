@@ -33,26 +33,8 @@ script.add Node(
   # portrait: portrait,
   pages:
     @[
-<<<<<<< Updated upstream
-      # "Halt! [#ffd24d]Who goes there[/] at this hour, [o]traveler[/]? The roads past the gate are not safe after dark.",
-      # "**Choose your words.**",
-      "Last week, I got a LinkedIn message from a recruiter at a small crypto startup.",
-      "We exchanged a few messages over a couple of days, she described a broken proof-of-concept they needed a lead engineer for, and then sent me a public GitHub repo to review.",
-      "Specifically, she asked me to /“check out the deprecated Node modules issue./”",
-      "It’s not uncommon to ask for a review of an existing codebase,",
-      "but something felt off and raised an alarm in my head, so I decided to get a bit extra paranoid."
-||||||| Stash base
-      # "Halt! [#ffd24d]Who goes there[/] at this hour, [o]traveler[/]? The roads past the gate are not safe after dark.",
-      # "**Choose your words.**",
-      "Last week, I got a LinkedIn message from a recruiter at a small crypto startup.",
-      "We exchanged a few messages over a couple of days, she described a broken proof-of-concept they needed a lead engineer for, and then sent me a public GitHub repo to review.",
-      "Specifically, she asked me to /“check out the deprecated Node modules issue./”",
-      "It’s not uncommon to ask for a review of an existing codebase,",
-      "but something felt off and raised an alarm in my head, so I decided to get a bit extra paranoid.",
-=======
       "Halt! [#ffd24d]Who goes there[/] at this hour, [o]traveler[/]? The roads past the gate are not safe after dark.",
       "**Choose your words.**",
->>>>>>> Stashed changes
     ],
   choices:
     @[

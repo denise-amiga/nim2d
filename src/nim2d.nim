@@ -3,6 +3,7 @@
 ## which sits on an optional Box2D dependency and is imported separately with
 ## `import nim2d/physics`.
 
+import std/exitprocs
 import nim2d/backend/sdl
 import nim2d/types
 import nim2d/backend/renderer
@@ -50,9 +51,10 @@ proc `draw=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
   n2d.draw = p
 
 proc `quit=`*(n2d: Nim2d, p: proc(nim2d: Nim2d)) =
-  ## Set the callback that runs once when the main loop ends, however it ends:
-  ## the window closing or `running` set to false. It runs before teardown, so
-  ## it is the place to save state.
+  ## Set the callback that runs once when the program ends, whether the main loop
+  ## finished normally (the window closed or `running` was set to false) or it
+  ## was cut short by a `system.quit` call or an escaping exception. It runs
+  ## before teardown and fires exactly once, so it is the place to save state.
   n2d.quit = p
 
 proc `keydown=`*(n2d: Nim2d, p: proc(nim2d: Nim2d, key: Key)) =
@@ -337,11 +339,36 @@ proc newNim2d*(title: string, x, y, width, height: cint): Nim2d =
   ## Open a window with the default sky-blue background.
   newNim2d(title, x, y, width, height, (89'u8, 157'u8, 220'u8, 255'u8))
 
+proc teardown(nim2d: Nim2d) =
+  ## Run the `quit` callback, then tear down audio, the GPU and the window. This
+  ## is reached from the tail of `play` on a normal exit and from an exit hook
+  ## when `quit` or an exception cuts the loop short, so it guards against running
+  ## twice. The GPU and window come down even if the `quit` callback raises.
+  if nim2d.teardownRan:
+    return
+  nim2d.teardownRan = true
+  try:
+    nim2d.quit(nim2d)
+  finally:
+    nim2d.shutdownAudio()
+    nim2d.gpu.destroy()
+    SDL_DestroyWindow(nim2d.gpu.window)
+    sdlQuit()
+
 proc play*(nim2d: Nim2d) =
   ## Run the main loop: dispatch events, call `update` and `draw` every frame,
   ## and keep going until the window closes or `running` is set to false. The
   ## `quit` callback runs once after the loop, then audio, the GPU and the
-  ## window are torn down.
+  ## window are torn down. An exit hook runs the same teardown if the program
+  ## ends some other way, so a `system.quit` or an escaping exception still
+  ## releases the device and window instead of leaking them.
+  addExitProc(
+    proc() =
+      try:
+        nim2d.teardown()
+      except CatchableError:
+        discard
+  )
   nim2d.load(nim2d)
   nim2d.lastCounter = SDL_GetPerformanceCounter()
   var evt: SDL_Event
@@ -364,8 +391,4 @@ proc play*(nim2d: Nim2d) =
       nim2d.draw(nim2d)
       nim2d.gpu.endFrame()
 
-  nim2d.quit(nim2d)
-  nim2d.shutdownAudio()
-  nim2d.gpu.destroy()
-  SDL_DestroyWindow(nim2d.gpu.window)
-  sdlQuit()
+  nim2d.teardown()

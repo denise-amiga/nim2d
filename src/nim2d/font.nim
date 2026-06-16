@@ -69,6 +69,19 @@ proc newImageFont*(nim2d: Nim2d, filename, glyphs: string, spacing: int32 = 1): 
   ## A bitmap font loaded from an image file. See the other overload.
   nim2d.newImageFont(newImageData(filename), glyphs, spacing)
 
+proc destroy*(nim2d: Nim2d, font: Font) =
+  ## Free a font's handles right away rather than waiting for it to be collected.
+  ## The font is unusable afterwards. Use it when you load and drop many fonts,
+  ## say on a level change; otherwise a font frees itself when it goes out of use.
+  if font == nil:
+    return
+  if font.font != nil:
+    TTF_CloseFont(cast[ptr TTF_Font](font.font))
+    font.font = nil
+  if font.img != nil:
+    nim2d.destroy(font.img)
+    font.img = nil
+
 proc getAscent*(font: Font): int =
   ## How far the font reaches above the baseline, in pixels. A bitmap font
   ## reports its glyph height, since it draws from the top.

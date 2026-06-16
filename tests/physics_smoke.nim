@@ -84,4 +84,20 @@ block:
   doAssert sawContact, "no contact event was reported on landing"
   cw.destroy()
 
+# A world can be destroyed more than once without a double free, and a world
+# left to be collected frees itself through its destructor rather than leaking.
+block:
+  let dw = newWorld(0.0, 10.0)
+  discard dw.newBody(0.0, 0.0, btDynamic)
+  dw.destroy()
+  dw.destroy() # the guard makes the second call a no-op, not a crash
+
+proc dropWorld() =
+  let tw = newWorld(0.0, 10.0)
+  discard tw.newBody(0.0, 0.0, btDynamic)
+  # tw goes out of scope here, so its destructor frees the Box2D world
+
+dropWorld()
+GC_fullCollect()
+
 echo "physics smoke ok"

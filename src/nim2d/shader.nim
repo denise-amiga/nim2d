@@ -67,6 +67,17 @@ proc send*(shader: Shader, values: openArray[float32]) =
   let n = min(values.len * sizeof(float32), shader.uniform.len)
   copyMem(addr shader.uniform[0], unsafeAddr values[0], n)
 
+proc destroy*(nim2d: Nim2d, shader: Shader) =
+  ## Release a shader's pipelines right away rather than waiting for it to be
+  ## collected. The shader is unusable afterwards. Use it when you build and drop
+  ## many shaders; otherwise a shader frees itself when it goes out of use.
+  if shader == nil:
+    return
+  for blend in BlendMode:
+    if shader.pipelines[blend] != nil:
+      SDL_ReleaseGPUGraphicsPipeline(nim2d.gpu.device, shader.pipelines[blend])
+      shader.pipelines[blend] = nil
+
 proc setShader*(nim2d: Nim2d, shader: Shader) =
   ## Draw with this shader until it is unset.
   nim2d.gpu.curShader = shader

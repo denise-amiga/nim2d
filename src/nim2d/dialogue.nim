@@ -208,26 +208,46 @@ proc `==`(a, b: SpanStyle): bool =
 
 proc paletteColor(name: string): tuple[c: Color, found: bool] =
   case name
-  of "white": (white, true)
-  of "black": (black, true)
-  of "red": (red, true)
-  of "green": (green, true)
-  of "blue": (blue, true)
-  of "yellow": (yellow, true)
-  of "orange": (orange, true)
-  of "cyan": (cyan, true)
-  of "magenta": (magenta, true)
-  of "purple": (purple, true)
-  of "pink": (pink, true)
-  of "brown": (brown, true)
-  of "lightgray", "lightgrey": (lightgray, true)
-  of "darkgray", "darkgrey": (darkgray, true)
-  of "sky": (sky, true)
-  of "navy": (navy, true)
-  of "lime": (lime, true)
-  of "teal": (teal, true)
-  of "gold": (gold, true)
-  else: (white, false)
+  of "white":
+    (white, true)
+  of "black":
+    (black, true)
+  of "red":
+    (red, true)
+  of "green":
+    (green, true)
+  of "blue":
+    (blue, true)
+  of "yellow":
+    (yellow, true)
+  of "orange":
+    (orange, true)
+  of "cyan":
+    (cyan, true)
+  of "magenta":
+    (magenta, true)
+  of "purple":
+    (purple, true)
+  of "pink":
+    (pink, true)
+  of "brown":
+    (brown, true)
+  of "lightgray", "lightgrey":
+    (lightgray, true)
+  of "darkgray", "darkgrey":
+    (darkgray, true)
+  of "sky":
+    (sky, true)
+  of "navy":
+    (navy, true)
+  of "lime":
+    (lime, true)
+  of "teal":
+    (teal, true)
+  of "gold":
+    (gold, true)
+  else:
+    (white, false)
 
 proc parseMarkup(page: string): seq[Segment] =
   ## Split a page into contiguous styled segments, with markup removed and
@@ -292,9 +312,12 @@ proc parseMarkup(page: string): seq[Segment] =
             let closing = openStack[^1]
             openStack.setLen(openStack.len - 1)
             case closing
-            of tkBold: dec boldN
-            of tkItalic: dec italN
-            of tkOutline: dec outN
+            of tkBold:
+              dec boldN
+            of tkItalic:
+              dec italN
+            of tkOutline:
+              dec outN
             of tkColor:
               if colorStack.len > 0:
                 colorStack.setLen(colorStack.len - 1)
@@ -425,12 +448,7 @@ proc layoutPage(style: Style, page: string, maxWidth: float): Layout =
       for r in c.runes:
         s.add $r
       curRuns.add Run(
-        text: s,
-        style: c.st,
-        x: cx,
-        y: 0,
-        startRune: startRune,
-        runeCount: c.runes.len,
+        text: s, style: c.st, x: cx, y: 0, startRune: startRune, runeCount: c.runes.len
       )
       for r in c.runes:
         flat.add r
@@ -446,9 +464,12 @@ proc layoutPage(style: Style, page: string, maxWidth: float): Layout =
   for li, ln in lines:
     let xoff =
       case style.align
-      of alLeft: 0.0
-      of alCenter: max(0.0, (maxWidth - ln.width) / 2)
-      of alRight: max(0.0, maxWidth - ln.width)
+      of alLeft:
+        0.0
+      of alCenter:
+        max(0.0, (maxWidth - ln.width) / 2)
+      of alRight:
+        max(0.0, maxWidth - ln.width)
     for r in ln.runs:
       var rr = r
       rr.x = r.x + xoff
@@ -482,9 +503,7 @@ proc currentNode*(d: Dialogue): Node =
   else:
     Node()
 
-proc textOrigin(
-    d: Dialogue, box: tuple[x, y, w, h: float]
-): tuple[x, y, maxW: float] =
+proc textOrigin(d: Dialogue, box: tuple[x, y, w, h: float]): tuple[x, y, maxW: float] =
   let node = currentNode(d)
   var tx = box.x + d.style.padding
   var ty = box.y + d.style.padding
@@ -515,7 +534,10 @@ proc ensureLayout(d: Dialogue, nim2d: Nim2d) =
   let org = textOrigin(d, box)
   let node = currentNode(d)
   let pageText =
-    if d.page >= 0 and d.page < node.pages.len: node.pages[d.page] else: ""
+    if d.page >= 0 and d.page < node.pages.len:
+      node.pages[d.page]
+    else:
+      ""
   d.layout = layoutPage(d.style, pageText, max(16.0, org.maxW))
   d.totalRunes = d.layout.total
   d.laidOut = true
@@ -571,7 +593,11 @@ proc advanceReveal(d: Dialogue, dt: float) =
   of rvInstant:
     d.shown = d.totalRunes
   of rvFade:
-    let t = if d.reveal.fadeTime > 0: dt / d.reveal.fadeTime else: 1.0
+    let t =
+      if d.reveal.fadeTime > 0:
+        dt / d.reveal.fadeTime
+      else:
+        1.0
     d.revealAlpha = min(1.0, d.revealAlpha + t)
     d.shown = d.totalRunes
   of rvTypewriter:
@@ -735,7 +761,10 @@ proc drawRun(
   let fauxItalic = run.style.italic and not usingItalic
   let baseCol = if run.style.hasColor: run.style.color else: style.textColor
   proc fade(c: Color): Color =
-    if alpha < 1.0: c.withAlpha(int(c.a.float * alpha)) else: c
+    if alpha < 1.0:
+      c.withAlpha(int(c.a.float * alpha))
+    else:
+      c
 
   nim2d.font = chosen
   proc stroke(dx, dy: float, c: Color) =
@@ -765,7 +794,9 @@ proc drawRun(
 proc defaultDrawBox(nim2d: Nim2d, d: Dialogue) =
   let box = boxRect(d, nim2d)
   nim2d.setColor(d.style.boxColor)
-  nim2d.rectangle(box.x, box.y, box.w, box.h, filled = true, roundness = d.style.roundness)
+  nim2d.rectangle(
+    box.x, box.y, box.w, box.h, filled = true, roundness = d.style.roundness
+  )
   let node = currentNode(d)
   if node.portrait != nil:
     let scale = (box.h - 2 * d.style.padding) / node.portrait.getHeight.float
@@ -859,11 +890,7 @@ proc newDialogue*(
 ): Dialogue =
   ## A dialogue player over `script`, drawn with `style`. Call `start` to begin.
   Dialogue(
-    script: script,
-    style: style,
-    reveal: reveal,
-    state: dsDone,
-    revealAlpha: 1.0,
+    script: script, style: style, reveal: reveal, state: dsDone, revealAlpha: 1.0
   )
 
 # ---------------------------------------------------------------------------
