@@ -31,7 +31,10 @@ proc setResizable*(nim2d: Nim2d, resizable: bool) =
   discard SDL_SetWindowResizable(nim2d.gpu.window, resizable)
 
 proc setFullscreen*(nim2d: Nim2d, fullscreen: bool) =
-  ## Switch between fullscreen and windowed.
+  ## Switch between fullscreen and windowed. Fullscreen covers the whole display
+  ## at its native resolution; `getWidth`/`getHeight` then report that size. On
+  ## macOS this is a borderless full-display fullscreen, so it fills the screen
+  ## under the menu bar or notch instead of leaving a strip.
   discard SDL_SetWindowFullscreen(nim2d.gpu.window, fullscreen)
 
 proc isFullscreen*(nim2d: Nim2d): bool =

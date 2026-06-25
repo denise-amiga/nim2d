@@ -264,6 +264,16 @@ proc newNim2d*(
   ## backing buffer at the display's real pixel resolution, `aa = 2` renders
   ## each frame at twice the size and scales it down for anti-aliasing, and
   ## `stencil` builds the stencil machinery that `stencil` masking needs.
+  when defined(macosx):
+    # By default macOS fullscreen enters a native "Spaces" fullscreen that sits
+    # inside the display's usable area, so on a Mac with a menu bar or a notch it
+    # leaves a black strip across the top. Turning Spaces off makes fullscreen a
+    # borderless window over the whole display, which fills the screen edge to
+    # edge and switches instantly with no transition animation, the behaviour a
+    # game wants. The Cocoa video backend reads this when it initializes, so it
+    # has to be set before SDL_Init.
+    discard SDL_SetHint(SDL_HINT_VIDEO_MAC_FULLSCREEN_SPACES, "0")
+
   if not SDL_Init(SDL_InitFlags(SDL_INIT_VIDEO or SDL_INIT_GAMEPAD)):
     raise newException(CatchableError, "SDL_Init failed: " & $SDL_GetError())
 
