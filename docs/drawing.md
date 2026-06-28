@@ -307,6 +307,8 @@ You can replace the fragment stage with your own shader for effects. While a sha
 
 There are two ways to make one. The portable way is to write the shader once in GLSL, compile it offline to a SPIR-V blob and an MSL blob, and hand both to [`newShader`](api/shader.md#newShader); the engine picks the one the running backend wants, so the same program draws on Metal and Vulkan alike. The shader example does exactly this, and the comment at the top of its `plasma.frag` shows the two compile commands (glslc, then shadercross). The GLSL receives `vUV` at location 0 and `vColor` at location 1 from the vertex stage, a sampler in set 2, and, when you ask for one, a uniform buffer in set 3.
 
+These two blobs cover Vulkan and Metal but not the Direct3D 12 backend that SDL may pick on Windows, since there is no DXIL blob for a custom shader. The built-in drawing runs on Direct3D 12 either way — only your own shaders are affected. If a game uses one on Windows, force the Vulkan backend by setting `SDL_GPU_DRIVER=vulkan` before it starts (see [graphics backends](getting-started.md#graphics-backends)).
+
 ```nim { .annotate }
 const spv = staticRead("plasma.spv")
 const msl = staticRead("plasma.metal")

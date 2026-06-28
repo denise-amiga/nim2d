@@ -4,7 +4,7 @@ nim2d is a small 2D game engine for Nim, in the spirit of love2d. You open a win
 
 ![shapes, a bezier curve and text rendered by nim2d](assets/hero.png){ width="740" }
 
-It runs on macOS, Linux and Windows through SDL3 and its GPU API, drawing on Metal or Vulkan depending on the platform. Every screenshot in these docs was rendered by nim2d itself, by a small tool that draws each scene into a canvas, reads the pixels back and saves a PNG.
+It runs on macOS, Linux and Windows through SDL3 and its GPU API, drawing on Metal, Vulkan or Direct3D 12 depending on the platform. Every screenshot in these docs was rendered by nim2d itself, by a small tool that draws each scene into a canvas, reads the pixels back and saves a PNG.
 
 nim2d is batteries-included. Beyond the core there is a set of opt-in modules for the things almost every game ends up rebuilding, a camera, collision, tweening, tilemaps and more, each carried only when you import it. The code lives on GitHub at [github.com/nim2d/nim2d](https://github.com/nim2d/nim2d).
 

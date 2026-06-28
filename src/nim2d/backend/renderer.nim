@@ -141,32 +141,50 @@ proc makePipeline(
       CatchableError, "SDL_CreateGPUGraphicsPipeline failed: " & $SDL_GetError()
     )
 
+proc blobFor(
+    fmt: SDL_GPUShaderFormat, spv, msl, dxil: string
+): (string, cstring) =
+  ## (blob, entry point) for the active built-in shader format. SPIR-V (Vulkan)
+  ## and DXIL (Direct3D 12) keep the authored `main`; MSL (Metal) uses `main0`,
+  ## since SPIRV-Cross renames `main` when it transpiles.
+  if fmt == SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_SPIRV):
+    (spv, "main".cstring)
+  elif fmt == SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_DXIL):
+    (dxil, "main".cstring)
+  else:
+    (msl, "main0".cstring)
+
 proc buildPipelines(gpu: GpuContext) =
   let dev = gpu.device
-  let spirv = gpu.shaderFormat == SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_SPIRV)
-  let entry = (if spirv: "main".cstring else: "main0".cstring)
+  let (vsBlob, vsEntry) =
+    blobFor(gpu.shaderFormat, VertexSPIRV, VertexMSL, VertexDXIL)
   let vs = makeShader(
     dev,
-    (if spirv: VertexSPIRV else: VertexMSL),
-    entry,
+    vsBlob,
+    vsEntry,
     SDL_GPU_SHADERSTAGE_VERTEX,
     0,
     1,
     gpu.shaderFormat,
   )
+  let (fcBlob, fcEntry) =
+    blobFor(gpu.shaderFormat, FragmentColorSPIRV, FragmentColorMSL, FragmentColorDXIL)
   let fsColor = makeShader(
     dev,
-    (if spirv: FragmentColorSPIRV else: FragmentColorMSL),
-    entry,
+    fcBlob,
+    fcEntry,
     SDL_GPU_SHADERSTAGE_FRAGMENT,
     0,
     0,
     gpu.shaderFormat,
   )
+  let (ftBlob, ftEntry) = blobFor(
+    gpu.shaderFormat, FragmentTextureSPIRV, FragmentTextureMSL, FragmentTextureDXIL
+  )
   let fsTex = makeShader(
     dev,
-    (if spirv: FragmentTextureSPIRV else: FragmentTextureMSL),
-    entry,
+    ftBlob,
+    ftEntry,
     SDL_GPU_SHADERSTAGE_FRAGMENT,
     1,
     0,
@@ -228,11 +246,12 @@ proc createShaderPipelines*(
   ## entry point and format are passed in: MSL source uses entry "frag" (Metal
   ## only), while precompiled SPIR-V/MSL uses "main"/"main0" and runs everywhere.
   let dev = gpu.device
-  let spirv = gpu.shaderFormat == SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_SPIRV)
+  let (vsBlob, vsEntry) =
+    blobFor(gpu.shaderFormat, VertexSPIRV, VertexMSL, VertexDXIL)
   let vs = makeShader(
     dev,
-    (if spirv: VertexSPIRV else: VertexMSL),
-    (if spirv: "main".cstring else: "main0".cstring),
+    vsBlob,
+    vsEntry,
     SDL_GPU_SHADERSTAGE_VERTEX,
     0,
     1,
@@ -310,10 +329,12 @@ proc newGpuContext*(
     window: ptr SDL_Window, aa: int32 = 1, stencil = false
 ): GpuContext =
   result = GpuContext(window: window, ssFactor: max(1'i32, aa), stencilEnabled: stencil)
-  # Accept either shader format and let SDL choose a backend: Metal with MSL on
-  # Apple platforms, Vulkan with SPIR-V on Linux and Windows.
+  # Accept any of the three shader formats and let SDL choose a backend: Metal
+  # with MSL on Apple platforms, Vulkan with SPIR-V on Linux, and Direct3D 12 with
+  # DXIL or Vulkan with SPIR-V on Windows.
   let want = SDL_GPUShaderFormat(
-    uint32(SDL_GPU_SHADERFORMAT_MSL) or uint32(SDL_GPU_SHADERFORMAT_SPIRV)
+    uint32(SDL_GPU_SHADERFORMAT_MSL) or uint32(SDL_GPU_SHADERFORMAT_SPIRV) or
+    uint32(SDL_GPU_SHADERFORMAT_DXIL)
   )
   result.device = SDL_CreateGPUDevice(want, false, nil)
   if result.device == nil:
@@ -321,10 +342,14 @@ proc newGpuContext*(
   # Publish the live device so device-bound destructors know it is safe to
   # release GPU handles. Cleared in destroy().
   gpuLiveDevice = result.device
-  # Record which format the chosen backend actually takes, to pick the shader blob.
-  let got = SDL_GetGPUShaderFormats(result.device)
-  if (uint32(got) and uint32(SDL_GPU_SHADERFORMAT_SPIRV)) != 0:
+  # Record which format the chosen backend actually takes, to pick the shader
+  # blob. A Vulkan device reports SPIR-V, a D3D12 device reports DXIL, and a Metal
+  # device reports MSL, so this matches the backend SDL selected.
+  let got = uint32(SDL_GetGPUShaderFormats(result.device))
+  if (got and uint32(SDL_GPU_SHADERFORMAT_SPIRV)) != 0:
     result.shaderFormat = SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_SPIRV)
+  elif (got and uint32(SDL_GPU_SHADERFORMAT_DXIL)) != 0:
+    result.shaderFormat = SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_DXIL)
   else:
     result.shaderFormat = SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_MSL)
   if not SDL_ClaimWindowForGPUDevice(result.device, window):

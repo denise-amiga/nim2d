@@ -1,13 +1,18 @@
 # Built-in shader compilation, included by the main Makefile so `make shaders`
 # works. The shaders are authored in GLSL under shaders/ and compiled to SPIR-V
-# (Vulkan) and MSL (Metal) blobs in src/nim2d/backend/shaders/, which are
-# committed. This only runs when a shader source changes; an ordinary build uses
-# the committed blobs and needs none of the tools below.
+# (Vulkan), MSL (Metal) and DXIL (Direct3D 12) blobs in src/nim2d/backend/shaders/,
+# which are committed. This only runs when a shader source changes; an ordinary
+# build uses the committed blobs and needs none of the tools below.
 #
 # It needs glslc (from shaderc: `brew install shaderc`) and the SDL_shadercross
-# CLI. shadercross has no Homebrew package, so build it from source once. We only
-# target Metal and Vulkan, so the DirectX compiler is left off, which keeps the
-# build small (DXC is huge). Build SPIRV-Cross first, then shadercross against it:
+# CLI. shadercross has no Homebrew package, so build it from source once.
+#
+# DXIL needs a shadercross built with DXC (-DSDLSHADERCROSS_DXC=ON). DXC is large,
+# so a Metal/Vulkan-only build can leave it off (-DSDLSHADERCROSS_DXC=OFF) and run
+# `DXIL=0 make shaders` to keep the committed DXIL blobs while regenerating the
+# rest. The committed DXIL blobs were produced on Windows with a DXC-enabled
+# shadercross (the prebuilt SDL3_shadercross-*-VC-x64 artifact works as-is). Build
+# SPIRV-Cross first, then shadercross against it:
 #
 #   git clone --depth 1 https://github.com/KhronosGroup/SPIRV-Cross
 #   cmake -S SPIRV-Cross -B SPIRV-Cross/build -DCMAKE_BUILD_TYPE=Release \

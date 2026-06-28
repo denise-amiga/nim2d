@@ -47,16 +47,29 @@ proc newShader*(nim2d: Nim2d, spirv, msl: string, uniformFloats = 0): Shader =
   ## Compile a fragment shader from precompiled cross-platform blobs: SPIR-V for
   ## Vulkan, MSL for Metal, both produced offline from one GLSL source. The blob
   ## matching the live backend is used, so this runs on macOS, iOS, Linux and
-  ## Windows. The GLSL takes `vUV` at location 0 and `vColor` at location 1 from
-  ## the vertex, a sampler in set 2, and (if used) a uniform buffer in set 3.
+  ## Windows under Vulkan. The GLSL takes `vUV` at location 0 and `vColor` at
+  ## location 1 from the vertex, a sampler in set 2, and (if used) a uniform
+  ## buffer in set 3.
+  ##
+  ## There is no DXIL blob here, so this does not run on the Direct3D 12 backend
+  ## SDL may pick on Windows; force Vulkan with `SDL_GPU_DRIVER=vulkan` if a game
+  ## uses a custom shader there. The built-in drawing runs on Direct3D 12 either
+  ## way.
+  let fmt = nim2d.gpu.shaderFormat
+  if fmt == SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_DXIL):
+    raise newException(
+      CatchableError,
+      "newShader(spirv, msl) has no DXIL blob for the Direct3D 12 backend; " &
+        "set SDL_GPU_DRIVER=vulkan to use custom shaders on Windows",
+    )
   result = Shader(hasUniform: uniformFloats > 0)
   if uniformFloats > 0:
     result.uniform = newSeq[byte](uniformFloats * sizeof(float32))
-  let useSpv = nim2d.gpu.shaderFormat == SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_SPIRV)
+  let useSpv = fmt == SDL_GPUShaderFormat(SDL_GPU_SHADERFORMAT_SPIRV)
   result.pipelines = nim2d.gpu.createShaderPipelines(
     (if useSpv: spirv else: msl),
     (if useSpv: "main".cstring else: "main0".cstring),
-    nim2d.gpu.shaderFormat,
+    fmt,
     result.hasUniform,
   )
 

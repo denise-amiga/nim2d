@@ -38,7 +38,7 @@ This flag does nothing useful on macOS or Linux, so leave it out there.
 
 Your game links against SDL3 and the three satellite libraries (SDL3_image, SDL3_ttf, SDL3_mixer), and SDL_GPU loads its backend driver at runtime, so those libraries have to be present wherever the game runs. During development they come from the install you set up in [getting started](getting-started.md). For a build you give to someone else, they have to travel with it or already be on the target machine.
 
-On Windows the libraries are DLLs. Copy `SDL3.dll`, `SDL3_image.dll`, `SDL3_ttf.dll` and `SDL3_mixer.dll` from your `C:\sdl3\bin` into the same folder as the `.exe`. A shipped Windows game is the executable, those DLLs, and the assets, all in one folder.
+On Windows the libraries are DLLs. Copy `SDL3.dll`, `SDL3_image.dll`, `SDL3_ttf.dll` and `SDL3_mixer.dll` from your `C:\sdl3\bin` into the same folder as the `.exe`. A shipped Windows game is the executable, those DLLs, and the assets, all in one folder. The GPU backend, Direct3D 12 or Vulkan, lives inside `SDL3.dll` and is chosen at startup, so there is nothing more to bundle for graphics; the [graphics backends](getting-started.md#graphics-backends) section covers forcing one over the other.
 
 On macOS the binary records the path it was linked against. For a Homebrew install that path lives under `/opt/homebrew`, and `otool -L mygame` lists exactly what it expects:
 

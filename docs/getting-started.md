@@ -49,6 +49,8 @@ On an older Ubuntu, or any distribution without SDL3 packages, the same recipe b
 
 On Windows, every library ships prebuilt. Download the `-devel-...-mingw.zip` file from the releases page of each of [SDL](https://github.com/libsdl-org/SDL/releases), [SDL_image](https://github.com/libsdl-org/SDL_image/releases), [SDL_ttf](https://github.com/libsdl-org/SDL_ttf/releases) and [SDL_mixer](https://github.com/libsdl-org/SDL_mixer/releases), and merge the `x86_64-w64-mingw32` folder from each zip into one place, say `C:\sdl3`, so it has `bin`, `include` and `lib` folders. Then set the environment variable `NIM2D_SDL_PREFIX` to `C:/sdl3` and add `C:\sdl3\bin` to your `PATH` so the DLLs are found when your game runs.
 
+On Windows the GPU backend is either Direct3D 12 or Vulkan, and SDL picks one at startup; both ship inside `SDL3.dll`, and Direct3D 12 itself is part of Windows 10 and 11, so there is nothing extra to install. The [graphics backends](#graphics-backends) section below covers choosing between them.
+
 The same environment variable works everywhere. If your libraries live somewhere unusual, point `NIM2D_SDL_PREFIX` at the prefix that holds their `include` and `lib` directories.
 
 There is one optional extra. The physics module builds on Box2D and is imported separately with `import nim2d/physics`, so you only need Box2D if you use it: `brew install box2d` on macOS, `sudo pacman -S box2d` on Arch, built from source elsewhere. The [physics page](physics.md) has the details.
@@ -98,6 +100,21 @@ else:
 ```
 
 With that in place, `import nim2d` works in any program in that directory. The repository's own `config.nims` is the same thing with a few repo-specific extras, if you want to compare.
+
+## Graphics backends
+
+nim2d draws through SDL's GPU API, which talks to a native backend underneath: Metal on macOS, Vulkan on Linux, and either Direct3D 12 or Vulkan on Windows. You do not choose this in code. SDL picks a backend when the window is created, and nim2d hands it the matching precompiled shaders: the built-in renderer ships SPIR-V for Vulkan, MSL for Metal and DXIL for Direct3D 12, all committed in the repository, so an ordinary build needs no shader toolchain and no extra runtime libraries. Direct3D 12 is part of Windows 10 and 11, so a Windows game needs only the SDL3 DLLs it already ships with.
+
+On Windows you can steer the choice with SDL's `SDL_GPU_DRIVER` hint, set as an environment variable before the game starts:
+
+```console
+> set SDL_GPU_DRIVER=direct3d12
+> set SDL_GPU_DRIVER=vulkan
+```
+
+Leaving it unset lets SDL decide. This is worth knowing because the two backends are not always equivalent on a given machine: a driver bug on one can show up as a hang, a crash or wrong colors that the other does not have, and switching the hint is the quickest way to tell a backend problem from a game problem. Direct3D 12 is generally the steadier choice on Windows.
+
+One thing carries a caveat. A custom shader made with [`newShader`](api/shader.md#newShader) from SPIR-V and MSL blobs runs on Vulkan and Metal, but not on Direct3D 12, since there is no DXIL blob for it. The built-in drawing — shapes, images, text, canvases — works on all three backends; only your own GLSL-authored shaders are Vulkan/Metal-only for now. If you use one on Windows, force the Vulkan backend with the hint above, or keep the post-processing on a platform that has it.
 
 ## The first program
 
