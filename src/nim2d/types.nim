@@ -10,6 +10,7 @@
 import backend/sdl
 import backend/sdlttf
 import transform
+import std/tables
 
 type
   Color* = tuple[r, g, b, a: uint8]
@@ -224,6 +225,12 @@ type
     glyphX*, glyphW*: seq[int32] ## each glyph's x and width in the sheet
     imgH*: int32 ## glyph height (the sheet height)
     spacing*: int32 ## pixels added between glyphs
+    glyphCache*: Table[string, tuple[tex: Texture, tick: uint64]]
+      ## TTF only. White glyph textures reused across frames, so `print` does not
+      ## rasterize and upload a new GPU texture every call, which over a few
+      ## minutes would exhaust the Vulkan and D3D resource budget (see print). The
+      ## tick is the cache clock at the entry's last use, for LRU eviction.
+    cacheClock*: uint64 ## monotonic per-print counter, for LRU eviction
 
   Font* = ref FontObj
     ## A font for `print`: either a TrueType font opened through SDL_ttf, or a
@@ -427,6 +434,7 @@ proc `=destroy`(o: var FontObj) =
   `=destroy`(o.glyphSet)
   `=destroy`(o.glyphX)
   `=destroy`(o.glyphW)
+  `=destroy`(o.glyphCache)
 
 proc `=destroy`(o: var ShaderObj) =
   if gpuLiveDevice != nil:

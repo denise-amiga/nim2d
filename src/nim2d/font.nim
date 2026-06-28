@@ -1,16 +1,22 @@
 ## Text rendering via SDL_ttf 3.x.
 ##
-## Rasterizes each string to a surface with TTF_RenderText_Blended, uploads it
-## as a transient texture, and draws it as a quad. UTF-8 in, no rune-pointer
-## juggling.
+## A TrueType string is rasterized once to a white texture with
+## TTF_RenderText_Blended and kept in a per-font cache, reused across frames with
+## the draw color applied as a tint, so the same string is not uploaded again
+## every frame. Drawing is one quad. UTF-8 in, no rune-pointer juggling.
 
-import std/strutils
+import std/[strutils, tables]
 import types
 import backend/sdl
 import backend/sdlttf
 import backend/renderer
 import image
 import imagedata
+
+const GlyphCacheMax = 512
+  ## Max distinct strings kept rasterized per font (white textures, tinted at
+  ## draw). LRU-evicted past this. Static UI text never approaches it; changing
+  ## text (a clock, a score) trickles in and old values fall out.
 
 var ttfReady = false
 
@@ -81,6 +87,9 @@ proc destroy*(nim2d: Nim2d, font: Font) =
   if font.img != nil:
     nim2d.destroy(font.img)
     font.img = nil
+  # Release the cached glyph textures right away too. Not called mid-draw, so the
+  # immediate release is safe (no pending command list references them).
+  font.glyphCache.clear()
 
 proc getAscent*(font: Font): int =
   ## How far the font reaches above the baseline, in pixels. A bitmap font
@@ -154,28 +163,56 @@ proc print*(
     return
   if fnt.font == nil:
     return
-  let f = cast[ptr TTF_Font](fnt.font)
-  let col =
-    SDL_Color(r: nim2d.color.r, g: nim2d.color.g, b: nim2d.color.b, a: nim2d.color.a)
-  var surf = TTF_RenderText_Blended(f, text.cstring, csize_t(text.len), col)
-  if surf == nil:
-    return
-  if surf.format != SDL_PIXELFORMAT_RGBA32:
-    let conv = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_RGBA32)
-    SDL_DestroySurface(surf)
-    if conv == nil:
+  # Rasterizing and uploading a new GPU texture for every print call, every
+  # frame, churns the renderer's resource budget hard enough that Vulkan and D3D
+  # run out after a few minutes and the GPU hangs (Metal tolerates the churn, so
+  # it only showed on Windows). So each distinct string is rasterized once in
+  # white and kept in a per-font cache, then reused with this call's color and
+  # alpha applied as the draw tint, so every color and fade of a string shares
+  # the one cached texture.
+  inc fnt.cacheClock
+  var glyphs: Texture
+  fnt.glyphCache.withValue(text, cached):
+    glyphs = cached.tex
+    cached.tick = fnt.cacheClock # touch, for LRU
+  do:
+    let f = cast[ptr TTF_Font](fnt.font)
+    let white = SDL_Color(r: 255, g: 255, b: 255, a: 255)
+    var surf = TTF_RenderText_Blended(f, text.cstring, csize_t(text.len), white)
+    if surf == nil:
       return
-    surf = conv
-
-  let tex = nim2d.gpu.createTextureFromPixels(surf.pixels, surf.w, surf.h, surf.pitch)
-  let glyphs = Texture(
-    tex: tex, width: surf.w, height: surf.h, tint: (255'u8, 255'u8, 255'u8, 255'u8)
-  )
-  SDL_DestroySurface(surf)
+    if surf.format != SDL_PIXELFORMAT_RGBA32:
+      let conv = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_RGBA32)
+      SDL_DestroySurface(surf)
+      if conv == nil:
+        return
+      surf = conv
+    let w = surf.w
+    let h = surf.h
+    var tex: ptr SDL_GPUTexture
+    try:
+      tex = nim2d.gpu.createTextureFromPixels(surf.pixels, w, h, surf.pitch)
+    finally:
+      SDL_DestroySurface(surf)
+    glyphs =
+      Texture(tex: tex, width: w, height: h, tint: (255'u8, 255'u8, 255'u8, 255'u8))
+    # Bound the cache, dropping the least-recently-used string. Hand its texture
+    # to the renderer to release after the frame submits, since it may have been
+    # drawn this frame and still sit in the pending command list, where releasing
+    # it now would be a use-after-free of that draw. Then clear the wrapper so its
+    # own destructor does not release it a second time.
+    if fnt.glyphCache.len >= GlyphCacheMax:
+      var oldKey: string
+      var oldTick = high(uint64)
+      for k, v in fnt.glyphCache:
+        if v.tick < oldTick:
+          oldTick = v.tick
+          oldKey = k
+      let dead = fnt.glyphCache[oldKey].tex
+      if dead != nil and dead.tex != nil:
+        nim2d.gpu.addTempTexture(dead.tex)
+        dead.tex = nil
+      fnt.glyphCache.del(oldKey)
+    fnt.glyphCache[text] = (tex: glyphs, tick: fnt.cacheClock)
+  glyphs.tint = nim2d.color # this call's color and alpha, over the white texture
   glyphs.draw(nim2d, x, y, angle, sx, sy)
-  # The draw only records the raw `tex` pointer, so hand it to the renderer to
-  # free after the frame submits, and clear it from the transient wrapper so the
-  # wrapper's destructor does not release it early (a double free with the temp
-  # list, and a use-after-free of the still-pending draw).
-  nim2d.gpu.addTempTexture(tex)
-  glyphs.tex = nil
