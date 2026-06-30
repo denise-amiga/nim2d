@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.6.0"
+version       = "0.7.0"
 author        = "Beshr Kayali Reinholdsson"
 description   = "2d game engine for Nim, inspired by Love2d (SDL3 / SDL_GPU)"
 license       = "zlib"
